@@ -1,0 +1,39 @@
+# CityMETER · School
+
+> Recorded students and school records across Thailand by district (เขต/อำเภอ), with school group and affiliation, grades taught, published annual tuition, the ONESQA external-assessment result, OPEC enrolment history for private schools, straight-line distance to rail stations (CityMETER Transit) and a comparison set per school. A Landometer CityMETER public demo, release 0.1.0 (2026-11-05). Research master checked 2026-10-31, read and built 2026-11-05.
+
+What one figure means:
+- students = Σ student_count of CityMETER School 2026 (positive values only; a child development centre counts its registered children). Not seats, capacity, demand, an enrolment rate or school-age population. Unknown students are counted apart, never as 0.
+- records (แห่ง) = one CityMETER school UUID of the 2026 baseline (02_SCHOOLS or 03_CHILD_CENTERS of the research master). Operation is not field-verified; not a census.
+- groups = presentation groups from the source's affiliation and institution category: public (OBEC/สพฐ.), local (อปท., Bangkok, Pattaya), private (OPEC/สช.), international (an OPEC international record linked by id — never read from a name), vocational, non-formal (สกร.), child development centres, other public.
+- levels = from the source's grade codes, which exist for OBEC schools only; every other record is “level unknown”.
+- tuition = THB per student per academic year, tuition only, as the school announced it, per school only (86 schools). Not the cost of a year, a price level or a quality level; never summed or averaged across schools.
+- assessment = the ONESQA result the sheet selected (B.E. 2564–2567), verbatim, with its year. Not a ranking.
+- history = OPEC private-school snapshots, semesters 1–2 of B.E. 2565–2567. Not 2026 figures.
+- distances = straight lines between reference points, not walking routes, travel times, school zones or catchments.
+- districts = CityMETER production districts (codes as in https://landometer.com/v3/citymeter/{province}/D/{district}?d=school).
+
+Snapshot (release 0.1.0; fixtures, recompute from data):
+- 40,828 records, 10,134,747 students recorded (40,338 records with known students), all 928 districts, 77 provinces; 33,078 records with a registry point.
+- Bangkok: 12% of the province's recorded students (106,163 of 916,683) are in Lat Krabang, Sai Mai and Bang Kapi; 1% of their students with a point lie within 500 m of an operating rail station, against 17% in the rest of Bangkok.
+- The district with the most students recorded: Mueang Nakhon Ratchasima (93,597), more than any Bangkok district.
+
+Deep links (https://montri-th.github.io/school/):
+- ?metric=count — measure records instead of students
+- ?province={code} — e.g. BKK, NMA, CMI (production codes)
+- ?area={district code} — e.g. 1039 (เขตวัฒนา)
+- ?areas={code},{code} | ?areas=all — focus districts / every district
+- ?group={public|local|private|international|vocational|nonformal|childcare|other} · ?level={kinder|primary|lower|upper|unknown} · ?size={z1…z6} · ?aff={affiliation code, e.g. 113}
+- ?school={CityMETER school UUID} · ?station={CityMETER Transit station id} · ?view={areas|mix|affs} · ?search={text}
+
+Data and method:
+- [Product statement](https://montri-th.github.io/school/PRODUCT_STATEMENT.md): users, problem, claim boundary
+- [Data and method](https://montri-th.github.io/school/DATA_METHOD.md): sources, measures, groups, district matching, context joins, limits
+- [Dataset](https://montri-th.github.io/school/data/schools.json): columnar rows + dictionaries + provenance (meta)
+- [Developer handoff](https://montri-th.github.io/school/handoff/START_HERE.md)
+
+Map reading: symbol area grows with recorded students (hollow = unknown); names near the middle of the view rank by recorded students and published tuition; terrain facts describe the ground at hilly sites; choosing a school with a point opens a two-point perspective of a 3D building — the drawn building whose outline holds the pin, else the nearest drawn building within 300 m (800 m when nothing is drawn within 300 m), labelled “อาคารใกล้หมุด”, a camera choice, not a claim that the school is in it. Buildings per area: the units of CityMETER · Hotel (CityMETER Building V4 where it holds at least 1.15 × the OpenStreetMap buildings of a local administration it evaluated, else OpenStreetMap; data/building-units/).
+
+Ask Google: every view links to a Google Search for the question of the view (Google answers it at the top with an AI Overview). Google's answers are not CityMETER data and are never copied into it.
+
+Do not claim from this data: school quality or rank today, seats or vacancies, demand, school-age population, enrolment rates, market share, revenue, the full cost of a year, school zones, that a school is open today, walking time, that a district without records has no schools, that a record without tuition is free, or that a building height is measured (CityMETER heights are model estimates).

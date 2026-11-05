@@ -1,0 +1,48 @@
+{
+ "builtOn": "2026-11-05",
+ "checks": {
+  "pointDistrictDisagree": 52,
+  "pointOutsideFrames": 1,
+  "pointProvinceDisagree": 10
+ },
+ "counts": {
+  "admin.source": 40828,
+  "classrooms.known": 28435,
+  "closed": 1,
+  "feeEvidence": 48,
+  "grades.known": 28409,
+  "group.childcare": 5576,
+  "group.international": 157,
+  "group.local": 1360,
+  "group.nonformal": 406,
+  "group.other": 319,
+  "group.private": 3526,
+  "group.public": 28767,
+  "group.vocational": 717,
+  "history": 3248,
+  "international.from16only": 4,
+  "points": 33078,
+  "programmes": 149,
+  "quality": 33067,
+  "rows": 40828,
+  "stations.construction": 98,
+  "stations.operating": 195,
+  "students.known": 40338,
+  "students.sum": 10134747,
+  "teachers.known": 33601,
+  "tuition": 86,
+  "tuition.items": 700
+ },
+ "rows": 40828,
+ "stations": 293,
+ "tabs": {
+  "01_AFFILIATIONS": 16,
+  "02_SCHOOLS": 35252,
+  "03_CHILD_CENTERS": 5576,
+  "10_SOURCES": 4614,
+  "15_RESEARCH_COVERAGE": 3886,
+  "16_ENROLMENT": 23367,
+  "20_SCHOOL_FEES": 4929,
+  "99_SOURCE_2026": 40828
+ }
+}

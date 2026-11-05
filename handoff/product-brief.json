@@ -1,0 +1,571 @@
+{
+  "$schema": "./handoff.schema.json",
+  "schemaVersion": "1.5.0",
+  "documentType": "product-brief",
+  "productId": "citymeter-school",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "datasetCheckedOn": "2026-10-31",
+  "language": "th",
+  "productName": "CityMETER · School",
+  "repository": "https://github.com/montri-th/school",
+  "liveUrl": "https://montri-th.github.io/school/",
+  "productStatement": "PRODUCT_STATEMENT.md",
+  "job": "นักเรียนกระจุกอยู่ตรงไหน และรอบแปลงมีโรงเรียนแบบไหน — แล้วเจาะลงถึงสถานี โรงเรียน และคู่เทียบ",
+  "audiences": [
+    "ทีมพัฒนาโครงการที่อยู่อาศัยและนักลงทุนที่ดิน",
+    "ผู้ประกอบการโรงเรียนเอกชนและนานาชาติ",
+    "หน่วยงานการศึกษา จังหวัด และ อปท.",
+    "ผู้ประเมินมูลค่าและสถาบันการเงิน"
+  ],
+  "journey": [
+    "first Aha (3D city scene, students)",
+    "switch the measure (นักเรียน | สถานศึกษา)",
+    "district → groups, levels, sizes, stations, affiliations, schools",
+    "station → schools within 500 m",
+    "school → building view, tuition, history, assessment, comparison set",
+    "affiliation filter → its card",
+    "charts and table",
+    "open the same area in CityMETER production"
+  ],
+  "basedOn": "CityMETER · Hotel 0.3.6 (montri-th/hotel @177e592f2437d391b0aef953c7c877234cfd9ece): every engine contract carried unchanged; hotel-only features (chain logos, recorded prices, meeting rooms, retail context, current brand names, resort sites) not carried",
+  "rowScopes": {
+    "scopeRows": "rows after search · group · level · size · province · affiliation, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
+    "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
+    "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table"
+  },
+  "firstAha": {
+    "scope": "scopeRows",
+    "measure": "students (default) | count",
+    "ranking": "เขต/อำเภอ by the measure (then the other measure, then name) inside the home province = the province holding the most of the measure among rows placed at district level; up to three and never every district holding the measure (N ≤ 3 → top N − 1); never cut through a tie; none left → spread",
+    "headlineTemplate": "{share}% ของ{นักเรียน|สถานศึกษา}{home} อยู่ใน {n} {เขต|อำเภอ}นี้ (one district: อยู่ใน{เขต|อำเภอ}{name})",
+    "numerator": "Σ measure of the focused districts (matched membership)",
+    "denominator": "Σ measure of every row of the home province in the selection (homeValue)",
+    "personality": "rail: two bars — share of the measure within 500 m (straight line) of an operating CityMETER Transit station among the focus rows with a point vs the rest of the province’s placed rows with a point; both bases in each bar’s title and accessible text; hidden when neither side has any",
+    "secondaryFinding": "district(s) with the most of the measure outside the home province (every district tied); “อันดับ 1 นอก{home}”, “มากกว่าทุก{เขต}ของ{home}” when it exceeds the first focus district; hidden with a province filter and when the top is < 2",
+    "defaultFocus": "auto",
+    "defaultCamera": "city preset, fitPitched over the focused districts",
+    "action": "ดูทุกพื้นที่ (?areas=all); เปรียบเทียบพื้นที่ (opens charts); district names are links",
+    "model": "js/area-insight.js#summarizeAreaInsight",
+    "filter": "js/area-insight.js#filterAreaRows",
+    "defaultSnapshot": {
+      "asOf": "2026-10-31",
+      "builtOn": "2026-11-05",
+      "students": {
+        "home": "BKK",
+        "areas": [
+          {
+            "id": "1011",
+            "name": "ลาดกระบัง",
+            "value": 40309
+          },
+          {
+            "id": "1042",
+            "name": "สายไหม",
+            "value": 33427
+          },
+          {
+            "id": "1006",
+            "name": "บางกะปิ",
+            "value": 32427
+          }
+        ],
+        "value": 106163,
+        "homeValue": 916683,
+        "sharePct": 12,
+        "rail": {
+          "m": 500,
+          "focus": {
+            "within": 620,
+            "base": 79083
+          },
+          "rest": {
+            "within": 112216,
+            "base": 648859
+          }
+        },
+        "outside": {
+          "id": "3001",
+          "name": "เมืองนครราชสีมา",
+          "province": "NMA",
+          "value": 93597
+        }
+      },
+      "records": {
+        "home": "NMA",
+        "areas": [
+          {
+            "id": "3001",
+            "name": "เมืองนครราชสีมา",
+            "value": 169
+          },
+          {
+            "id": "3021",
+            "name": "ปากช่อง",
+            "value": 110
+          },
+          {
+            "id": "3008",
+            "name": "ด่านขุนทด",
+            "value": 103
+          }
+        ],
+        "value": 382,
+        "homeValue": 1786,
+        "sharePct": 21,
+        "outside": {
+          "name": "เมืองขอนแก่น",
+          "province": "KKN",
+          "value": 212
+        }
+      },
+      "note": "regression fixtures (tests/insight.test.js), never UI constants"
+    },
+    "fallbacks": {
+      "spread": "every district of the home province holds the same value → spread finding, the camera frames them",
+      "unplaced": "no district can be ranked → the count and a table action",
+      "empty": "no row → clear filters action"
+    }
+  },
+  "countingUnitContract": {
+    "default": "students recorded (Σ student_count, คน)",
+    "alternatives": [
+      "records (แห่ง)"
+    ],
+    "words": {
+      "students": "คน",
+      "count": "แห่ง"
+    },
+    "rule": "one row = one CityMETER school UUID of the 2026 baseline (roster record, not field-verified); unknown students counted apart, never 0",
+    "switch": "legend radio group, URL ?metric=count"
+  },
+  "metricContract": {
+    "areas": "Σ measure per เขต/อำเภอ (students → LI li.supply; records → LDS count)",
+    "provinces": "Σ measure per province frame (same family)",
+    "eligibility": "none — totals; ties are never cut (firstAha.ranking)",
+    "combined": "Σ focus ÷ the home province’s whole total in the selection (homeValue; a share, numerator and denominator shown)",
+    "notDrawn": "no per-area or per-person ratio: recorded students are not a density, an enrolment rate or a demand",
+    "ramp": "all 41 samples of the family LUT by rank among the measured nonzero values being read (js/scales.js#buildRamp; owner standing rule “Color scale ขอให้ใช้ 41 scales ตาม LDS เสมอ”); map, legend, labels, rank bars and the district chart read one ramp; the matrix has its own ramp over its cells"
+  },
+  "coverageContract": {
+    "covered": "every เขต/อำเภอ of the 77 provinces is in the roster’s national scope (all 928 hold at least one record without filters)",
+    "states": {
+      "measured": "ramp sample by rank",
+      "measured_zero": "sample 0 + zero outline — no record of the dataset is placed there under the filters",
+      "no_data": "students only: the district has records but none with known students (hatch)",
+      "out_of_scope": "not drawn"
+    },
+    "unplaced": "none in this release: every record sits in the district the source lists it under"
+  },
+  "categoricalCueContract": {
+    "registry": "landometer-series-10-v8",
+    "bindBy": "school group id (js/cues.js#GROUP_SERIES)",
+    "groups": {
+      "public": {
+        "series": 1,
+        "th": "โรงเรียนรัฐ สพฐ."
+      },
+      "local": {
+        "series": 4,
+        "th": "โรงเรียนท้องถิ่นและกรุงเทพฯ"
+      },
+      "private": {
+        "series": 2,
+        "th": "โรงเรียนเอกชน"
+      },
+      "international": {
+        "series": 3,
+        "th": "โรงเรียนนานาชาติ"
+      },
+      "vocational": {
+        "series": 5,
+        "th": "อาชีวศึกษา"
+      },
+      "nonformal": {
+        "series": 7,
+        "th": "ส่งเสริมการเรียนรู้ (สกร.)"
+      },
+      "childcare": {
+        "series": 10,
+        "th": "ศูนย์พัฒนาเด็กเล็ก"
+      },
+      "other": {
+        "series": 9,
+        "th": "สถานศึกษารัฐอื่น"
+      }
+    },
+    "noStar": true,
+    "sizeCue": "symbol area ∝ recorded students (radius = k(zoom)·√(students/400), cap 4,000, min 1.6 px; js/model.js#pinRadius); unknown students = open outline at the 200-student size; colour stays the group’s; quiet context ≤ 6 px radius"
+  },
+  "framesContract": {
+    "index": "data/area-index.json — 928 districts and 77 provinces, no geometry (codes, names, production areaSqm, label, bbox)",
+    "frames": "data/frames/{CODE}.json — district outlines per province (77 files)",
+    "loading": "the selection’s provinces at once; the provinces under the map at district zoom (≤ 6 per move); never all 77 up front; versioned with the release tag",
+    "failure": "reported and retried on the next request; panels, charts and table never depend on outlines"
+  },
+  "mapFocusContract": {
+    "principle": "detail only for the focused part — the selected district, the station, the school, the automatic or explicit focus; everything else visible but quiet",
+    "states": {
+      "auto": "default top districts; released when none of them is on screen",
+      "explicit": "?areas=a,b,c",
+      "none": "?areas=all"
+    },
+    "choropleth": "li.supply (students) or count (records), 41-sample ramp by rank, under the basemap’s first line layer; zoom 8–14.5; the selected จังหวัด from zoom 4; measured_zero = sample 0 + 2 px zero outline; no_data = hatch"
+  },
+  "contextContract": {
+    "rail": {
+      "source": {
+        "source": "CityMETER · Transit (montri-th/transit)",
+        "commit": "5f5232d077be08929d8a3325b7003be492688b09",
+        "file": "data/transit.json",
+        "sha256": "0916636a7c50a8832f25c073a9b667bc440ee74aef41bdfe499e663e1cc0bb18",
+        "release": "transit-data-2026-10-31-r1",
+        "asOf": "2026-10-31",
+        "rule": "operating = on the operator roster of CityMETER · Transit; construction = a project station, not a service; straight-line distance from the school point to the station reference point, up to 2000 m"
+      },
+      "drawn": "every operating station (195) as a quiet ring from zoom 10.5 (names from 13.5), clickable → station panel; the open station’s 500 m radius dashed",
+      "school": "nearest operating station within 2 km and nearest station under construction (words only)"
+    },
+    "distances": "straight lines between reference points — never a walking route, travel time, school zone or catchment"
+  },
+  "compsetContract": {
+    "module": "js/profile-model.js#compsetOf",
+    "rule": "same school group, at least one shared level when the school’s grades are known (else the group alone), within 2,000 m straight line, nearest first, ten shown, every row of the dataset",
+    "heading": "คู่เทียบ",
+    "chips": "type · levels · ≤ 2 กม.",
+    "around": "every record within 2 km (any group) beside it",
+    "never": "คู่แข่ง, a ranking or a school zone"
+  },
+  "feeContract": {
+    "field": "02_SCHOOLS tuition_annual_min/max (บาท/คน/ปี ค่าเรียนเท่านั้น) + 20_SCHOOL_FEES per-grade tuition of the same academic year",
+    "shown": "per school only: fact chip “฿min–max/ปี”, the “ค่าเรียนต่อปี” section with the academic year as written and the school’s announcement, comparison rows, table",
+    "never": "summed, averaged across schools, a price level, the cost of a year; a private copy (Drive) is never linked; no tuition ≠ free"
+  },
+  "qualityContract": {
+    "field": "evaluation_result (verbatim), evaluation_year_be, ONESQA catalogue page",
+    "shown": "per school with its year",
+    "never": "a rank, a score or a current quality level"
+  },
+  "historyContract": {
+    "field": "16_ENROLMENT reported grade sums, semesters 1–2 of B.E. 2565–2567 (OPEC)",
+    "shown": "bars per semester, “—” for a missing one",
+    "never": "2026 figures"
+  },
+  "contextActionsContract": {
+    "module": "js/ask.js#contextActions",
+    "views": [
+      "school",
+      "building",
+      "area",
+      "station",
+      "aff",
+      "overview"
+    ],
+    "ai": "Google Search with a question written for the view (0.3.3: /search?q=, answered at the top by Google’s AI Overview, AI Mode one tab away; never udm=50, which Google stops at “Continue with this search?” from another site)",
+    "maps": "Google Maps search by public names",
+    "streetView": "only with a point (school registry point, station reference point “ใกล้สถานี”)",
+    "dataBoundary": "Google’s answers are Google’s: never copied into the data"
+  },
+  "buildingJoinContract": {
+    "buildings": "focus-tier footprints: OpenStreetMap (pieces of one outline cut by tile edges, building:parts, podium + tower grouped) or, inside a CityMETER unit, CityMETER Building V4 (whole buildings, keys cm:)",
+    "points": "school points of the scope",
+    "rule": "display-time point-in-footprint (js/building-join.js#joinBuildings)",
+    "click": "one school → the school; several → the building panel “สถานศึกษาในอาคารนี้” (“สูงราว”, the outline source in the title and the provenance line)",
+    "neverChanges": "any count or district membership",
+    "nearest": "a school whose point falls in no outline is framed on the nearest drawn building (cameraContract.buildingView.target) — never joined, counted or listed in “สถานศึกษาในอาคารนี้”"
+  },
+  "interactionContract": {
+    "mapClicks": "focus pin → the building being looked at (x-ray: frame again) → focus building → station → province view district / province frame (below zoom 8) → district",
+    "reframe": "every way into a building view frames it again",
+    "quietDots": "never focusable or clickable",
+    "keyboard": "roving tabindex over HTML pins from zoom 15.5; roving tablist for chart views; arrow keys on the measure switch; visible focus everywhere"
+  },
+  "basemapContract": {
+    "generator": "js/map-style.js (no hosted style URL)",
+    "tiles": "https://tiles.openfreemap.org/planet (OpenMapTiles schema)",
+    "palette": "--basemap-* tokens of assets/theme.css; data colours never set there",
+    "water": "light: --basemap-water #CFDDE7 (basemap-only, 1.22:1 from the ground) and the shore line water-shore --basemap-shore #B2C7D6 (1.26:1 from the water), drawn above the district fill and beneath footprints and roads; rivers --basemap-water-line; dark: LDS surface.blueTint #18333E with shore #1F3F4C (owner 2026-11-02 “… ดูเหมือนน้ำมากกว่านี้ … แต่ยัง clean and quiet”)"
+  },
+  "massingContract": {
+    "cityTier": "basemap building extrusions, quiet, faded with distance from the focus; OpenFreeMap features replaced by CityMETER buildings are hidden (one hashed match) and their buildings outside the focus come back in a context layer drawn the same way",
+    "focusTier": "rounded footprints from z14 tiles in the focus regions (≤ 16 tiles nearest the camera; from zoom 12 in 3D when complete, else 13): OpenStreetMap, or CityMETER Building V4 tiles (≤ 40 requests, per อปท. or แขวง) inside CityMETER units",
+    "hostTier": "unused (no host geometry in this product)",
+    "rounding": "roundingRadiusM(zoom) 3–12 m",
+    "enclosure": "encloseOffsetM keeps the rounded shape around the original outline",
+    "buildingSource": "per unit from data/building-units/ (built by montri-th/hotel scripts/build-building-units.py, copied by scripts/adapt-building-units.py): CityMETER Building V4 when its count ≥ 1.15 × the OSM count of the unit (owner 2026-11-01), else OSM; units the Hotel build did not evaluate draw OSM; OSM buildings mapped in parts stay inside CityMETER units; a missing CityMETER tile leaves its part on OSM",
+    "terrain": "fill-extrusions stand on the terrain at their centroid (MapLibre); the building camera fits on the anchor's ground plane and the landed centre's ground; the x-ray solid is lifted the same way"
+  },
+  "cameraContract": {
+    "presets": {
+      "plan": "pitch 0 (3D off)",
+      "city": "pitch 56 · bearing 28 · fov 36.87 (overview)",
+      "model": "pitch 60 · fov 14 (district, school without a point)",
+      "eye": "pitch 75 · fov 24 (the building view: building, school with a point)"
+    },
+    "fitting": "fitPitched (overview, district): flat fit, then zoom out until every outline vertex is inside the padded viewport, then in while it still fits; pitch ≤ 90 − fov/2 − 3",
+    "buildingView": {
+      "owner": "2026-10-29 19:47 “อาคารที่เลือก หรือ on focus ให้แสดงด้วยมุมมอง 2-point perspective เสมอ zoom to fit viewport เสมอด้วย”",
+      "module": "js/camera.js#fitBuilding, twoPointBearing, wallAzimuth, occlusionScore, screenBounds (from CityMETER · Shopping centers); js/app.js#frameFocus",
+      "target": "js/app.js#focusTarget — the open building; the building the open school’s point falls in, else (the Hotel rule of 2026-11-02 “… ต้องแสดง 2-point perspective ของ 3d building mass ทุกกรณี”) the drawn building nearest the school’s point: js/building-join.js#nearestBuilding — distance from the point to the outline on a local plane, within 300 m (SCHOOL_REACH_M), the largest piece within 10 m of the nearest; when nothing is drawn within 300 m the focus tier is loaded once more for 800 m round the point (SCHOOL_REACH_FAR_M); legend “อาคารใกล้หมุด”, framed with the point (one zoom step wider, maxZoom 20); a camera choice only, never a join, a count or a located-in claim",
+      "bearing": "dominant wall azimuth + 45°, on the diagonal where the drawn focus buildings (massing.obstaclesNear, 400 m) hide least of it, then the one nearest the current bearing",
+      "fit": "eye preset; shift lens (0.3.2, js/camera.js#lensPadding): padding moves the principal point up to the free box’s centre, never below the canvas centre (pitch + fov/2 < 90 keeps the horizon out), so the camera looks straight at the building at pitch 75 on a phone’s strip above the sheet as on a desktop; fit points = the pieces as the focus tier draws them at building zoom (massing.fitPointsOf → js/massing.js#footprintFitPoints: the offset and fillets of zoom 18, ground and roof), never the shape drawn at the starting zoom (up to 3.6 m wider on every side); every one inside the free box (js/app.js#visibleBox: below the toolbar, above the Aha card, legend, chart tray, table or open phone sheet, left of the zoom control), one side filling 94% of it; maxZoom 21 when the building is known (js/camera.js#BUILDING_MAX_ZOOM — schools stand in low buildings across a campus; the Shopping centers limit 19.5 left a 40 m building at half the box) / 18 while unknown, minZoom 14",
+      "unknown": "a 90 m box round the point (12 m tall) framed the same way while the buildings load, and where nothing is drawn within 800 m; the camera turns to the building when it arrives, at most three times, never after a user camera move",
+      "plan": "3D off: the same footprint fitted flat (fitPitched plan, maxZoom 21 known / 18 unknown)",
+      "click": "selectSchool (pin, label, list row, search) and selectBuilding switch the map to 3D (js/app.js#ensure3d) before framing; a link keeps view3d=0 when it asks for it",
+      "terrain": "on terrain each fit point carries the ground it is drawn on (4th value: roof at the piece centroid’s ground, base at the lowest ground under its outline, the pin at its own ground); fitBuilding damps its landed rounds (half steps) and js/maplibre-guard.js#guardElevationFreeze lands the centre on the ground after every programmatic ease (MapLibre 5.6.2 leaves map._elevationFreeze on); refitted when the ground changes by ≥ 3 m, a new building arrives or the free box changes once the camera is still (js/app.js#watchFreeBox: legend, trays, phone sheet), at most 3 times, never after a user camera move",
+      "lift": "0.3.2: MapLibre 5.6.2 lifts a camera that would stand inside the terrain (Map#_elevateCameraIfInsideTerrain: lower pitch, other zoom) on every jump; fitBuilding computes with it off (withoutLift) and asks MapLibre’s own check about the camera it found — the alternates (the other corners, opposite first: js/app.js#frameFocus) when that camera would be lifted, else the pitch MapLibre allows; the target carries its pitch and the centre’s elevation (an instant jump checks from the right height)"
+    }
+  },
+  "tileCoverGuard": {
+    "module": "js/maplibre-guard.js#guardRetainedTiles(map, version) → boolean; padOverscaledChildren(idealTileIDs, zoom, maxzoom)",
+    "bug": "MapLibre GL JS 5.6.2 SourceCache._updateRetainedTiles checks the four children of a missing ideal tile whenever the cover zoom + 1 ≤ the source maxzoom; a pitched cover can already hold an ideal tile at the maxzoom, whose children() is ONE overscaled child; when that child is retained, children[1] is undefined and the frame throws “Cannot read properties of undefined (reading 'key')”",
+    "seen": "live 2026-10-29 (Claude desktop browser, real OpenFreeMap tiles): openmaptiles (vector, maxzoom 14), cover zoom 13, camera 13.79–13.95, pitch 75, while the building camera flew between branches; reproduced in the build container by stepping the pitched camera out from 19.5 to 13.6 over a building (7–8 errors on 0.2.0, 0 with the guard)",
+    "fix": "pad the child list of exactly those ideal tiles to four copies of the overscaled child, so the check reads as MapLibre's own overzoom branch; installed on the shared SourceCache prototype at every style load; only for version 5.6.2",
+    "test": "tests/maplibre-guard.test.js",
+    "elevationFreeze": "js/maplibre-guard.js#guardElevationFreeze(map, version), 0.3.2: MapLibre 5.6.2 easeTo/flyTo on terrain without freezeElevation leave map._elevationFreeze on (only a gesture or _finalizeElevation clears it), so the render loop stops clamping the centre to the ground and the framed building drifts (seen 2026-11-02: camera 80.97 m vs ground 62.41 m at Sri Panwa); the guard wraps map._afterEase: when the ease ended (not superseded) and no terrain gesture is running, it clears the freeze and sets the centre elevation to the ground; only for version 5.6.2 (tests/maplibre-guard.test.js)"
+  },
+  "venueXrayContract": {
+    "owner": "2026-10-29 19:47 “เช็คอย่าให้ 3d building mass ตึกอื่นบังอาคารที่กำลังดูอยู่”",
+    "module": "js/venue-xray.js#installVenueXray(map, {beforeId, toMercator, colors}) → {update(features, {colors}), setEnabled, hitTest(point), dispose, count, enabled, failed} (from CityMETER · Shopping centers / Luxury Brands)",
+    "layer": "venue-xray (custom, renderingMode 3d) before place-quarter (js/map-style.js#VENUE_XRAY_BEFORE): drawn over every building and over road names",
+    "input": "the features of the building being looked at (massing.featuresOf(target.refs)) with display_height_m / display_base_m; on terrain the roof is lifted by the ground at the piece centroid (as MapLibre lifts fill-extrusions) and the walls go down to the lowest ground under the outline (0.3.2; a fixed 10 m showed through the slope)",
+    "depth": "scissored depth clear inside the building’s screen box, then its own depth test",
+    "seeThrough": "massing.setScene('eye', rings): the focus buildings standing in front of it turn see-through (SCENE.eye)",
+    "labels": "district label chips never sit on the building (refreshLabelView avoid box); since 0.3.2 neither do the schools’ name labels (js/labels.js#installSchoolLabels avoid → buildingScreenBox)",
+    "visibility": "3D only, zoom ≥ 13 (XRAY_MIN_ZOOM); empty outside the building view",
+    "colours": "map.activeLayer faces, map.selectedStroke edges — map roles, not data colours",
+    "failSafe": "a GL error disables it (failed = true); the massing highlight keeps drawing",
+    "geojsonMaxzoom": "every GeoJSON source uses maxzoom 24 (js/map-layers.js#GEOJSON_MAXZOOM, the most geojson-vt allows), two levels above BUILDING_MAX_ZOOM: MapLibre 5.6.2 throws in SourceCache._updateRetainedTiles when the near tiles of a pitched cover reach a GeoJSON source maxzoom before they have data (seen in CityMETER · Shopping centers 2026-10-25); under the eye preset the near tiles sit up to about half a level above the camera (tests/release.test.js)"
+  },
+  "breadcrumbContract": {
+    "levels": [
+      "ประเทศไทย",
+      "จังหวัด",
+      "เขต/อำเภอ"
+    ],
+    "productionPath": "/v3/citymeter/{code}/D/{district}?d=school",
+    "demoQuery": "?province=BKK&area=1039",
+    "provinceCodes": "production route codes (base info lv0 abbrEn)",
+    "datasetCode": "school (production CityMETER school layer, checked 2026-11-05)"
+  },
+  "provinceContract": {
+    "frames": "data/provinces.geojson",
+    "fill": "the measure below zoom 8 without a province filter",
+    "labels": "ink chips to zoom 9",
+    "unknown": "none in this release"
+  },
+  "pictogramContract": {
+    "file": "assets/icons/material-pictogram-300.woff2",
+    "sha256": "5e61486060c8ae981d800bc610149d5edf523e0318dfe20acc61f08b6edcddc5",
+    "glyphs": [
+      "area",
+      "province",
+      "segment",
+      "ai",
+      "streetview",
+      "maps",
+      "building",
+      "school",
+      "students",
+      "teacher",
+      "classroom",
+      "level",
+      "fee",
+      "quality",
+      "programme",
+      "history",
+      "aff",
+      "closed",
+      "rail",
+      "compare",
+      "sea",
+      "elevation",
+      "relief",
+      "forest",
+      "rank",
+      "date",
+      "distance",
+      "construction",
+      "dataset"
+    ],
+    "rule": "decorative (aria-hidden); the text carries the meaning; no star"
+  },
+  "panel": {
+    "modes": [
+      "overview (+ affiliation card)",
+      "area",
+      "station",
+      "building",
+      "school"
+    ],
+    "actions": [
+      "select-area",
+      "select-school",
+      "select-building",
+      "select-station",
+      "select-province",
+      "filter-aff",
+      "filter-group",
+      "filter-level",
+      "set-metric",
+      "back",
+      "explore-top",
+      "clear-focus",
+      "open-charts",
+      "open-table",
+      "clear-filter",
+      "leave-area"
+    ],
+    "models": {
+      "overview": "js/profile-model.js#buildOverview",
+      "area": "buildAreaProfile",
+      "station": "buildStationProfile",
+      "building": "buildBuildingProfile",
+      "school": "buildSchoolDetail (+ compsetOf, historyOf)",
+      "aff": "buildAffProfile"
+    },
+    "provenance": "exactly one line per view: dataset · source (+ สช. / สมศ. / fee announcements / Transit / terrain when shown) · date · boundary, then “วิธีนับ”",
+    "phoneSheet": "56dvh bottom sheet (0.3.5; was 64dvh), sticky close; in the school, building, station and area modes the dataset heading is visually hidden (kept for screen readers) and the search form is off — the filter chips school"
+  },
+  "data": {
+    "file": "data/schools.json",
+    "rows": 40828,
+    "counts": {
+      "admin.source": 40828,
+      "classrooms.known": 28435,
+      "closed": 1,
+      "feeEvidence": 48,
+      "grades.known": 28409,
+      "group.childcare": 5576,
+      "group.international": 157,
+      "group.local": 1360,
+      "group.nonformal": 406,
+      "group.other": 319,
+      "group.private": 3526,
+      "group.public": 28767,
+      "group.vocational": 717,
+      "history": 3248,
+      "international.from16only": 4,
+      "points": 33078,
+      "programmes": 149,
+      "quality": 33067,
+      "rows": 40828,
+      "stations.construction": 98,
+      "stations.operating": 195,
+      "students.known": 40338,
+      "students.sum": 10134747,
+      "teachers.known": 33601,
+      "tuition": 86,
+      "tuition.items": 700
+    },
+    "checks": {
+      "pointDistrictDisagree": 52,
+      "pointOutsideFrames": 1,
+      "pointProvinceDisagree": 10
+    },
+    "registryId": "research.TH.school",
+    "tabs": {
+      "02_SCHOOLS": "c21134e782a68ab005828be260dbedc9a977d5fab6b5dd67ba3188c30e57e2a0",
+      "03_CHILD_CENTERS": "a65faa735c05c4fa541f8882d2d2a326201b518756f04d605035d114730dbc2b",
+      "99_SOURCE_2026": "eb906163d2652a4d4017a49d286034f68b32be575a651f66207146a6494400d2",
+      "01_AFFILIATIONS": "a8f496a0848a230c90e9a40058b594cf19f1a1d15ffcd88b2f7e50cfa2e43ca9",
+      "15_RESEARCH_COVERAGE": "2d4020b3324183b31e271f5e61db6dae4ecb62c799bb81256d8dbcdd8f867123",
+      "16_ENROLMENT": "6c1f3640e9bab6c2b428d1a14e1d37b898dc3311e508336a1073fdfec04990d4",
+      "20_SCHOOL_FEES": "9c4fdcd39a9df53c57501cbffe740d7af107622c178b6d6daae43edb3b74059d",
+      "10_SOURCES": "311602bd8dd3fafc926c3582f70e02e5741fe51eeb677907ddfa900e46afdf96"
+    },
+    "checkedOn": "2026-10-31",
+    "readOn": "2026-11-05",
+    "builtOn": "2026-11-05",
+    "stations": 293,
+    "affiliations": 16,
+    "groups": 8,
+    "method": "DATA_METHOD.md",
+    "build": "scripts/build-data.py"
+  },
+  "visualSystem": {
+    "lds": "Landometer-Design-System-v0.9.7.md (standalone-0.9.7-r1, v0.9.7-owner.1, color-srgb-10, sha256 d3085cbc…96)",
+    "locationIntelligence": "Location-Intelligence-Profile-for-LDS-v0.9.7.md (location-intelligence-profile-lds-0.9.7-r1, sha256 5d485604…3c): li.supply",
+    "parity": "scripts/check-lds-parity.mjs — 124 checks",
+    "themes": "light and dark; analytical HEX identical on both",
+    "fonts": "Bai Jamjuree · IBM Plex Sans Thai Looped · Arvo · JetBrains Mono (assets/lds/build-kit)"
+  },
+  "invariants": [
+    {
+      "id": "S1",
+      "rule": "unknown students are never 0 (counted apart; district no_data under students; tiles “—”; chips read records)"
+    },
+    {
+      "id": "S2",
+      "rule": "tuition is per school only, with its academic year, tuition only; never summed or averaged across schools; no tuition ≠ free"
+    },
+    {
+      "id": "S3",
+      "rule": "membership is the district the source lists the school under (row.admin); never re-assigned on screen"
+    },
+    {
+      "id": "S4",
+      "rule": "distances are straight lines between reference points; never walking time, a school zone or a catchment"
+    },
+    {
+      "id": "S5",
+      "rule": "the Aha never cuts a tie and never focuses every district holding the measure"
+    },
+    {
+      "id": "S6",
+      "rule": "every panel view ends with exactly one provenance line"
+    },
+    {
+      "id": "S7",
+      "rule": "one symbol = one row with a point; never clustered"
+    },
+    {
+      "id": "S8",
+      "rule": "groups follow the source’s affiliation and an OPEC link by id; never a name"
+    },
+    {
+      "id": "S9",
+      "rule": "colours only from assets/theme.css, js/scales.js, js/cues.js; 41 samples by rank; same HEX on both themes"
+    },
+    {
+      "id": "S10",
+      "rule": "no official code field, record id, researcher note, private document link or Landometer commercial term in the repository"
+    },
+    {
+      "id": "S11",
+      "rule": "levels only from grade codes; “ไม่ทราบระดับชั้น” is its own filter value and bar"
+    }
+  ],
+  "chartContracts": [
+    {
+      "viewKey": "areas",
+      "title": "เขต/อำเภอ",
+      "question": "เขต/อำเภอไหนมีนักเรียน (หรือสถานศึกษา) มากที่สุด",
+      "encoding": "bars in the map’s ramp colour, top 20 of every ranked district",
+      "metric": "the current measure",
+      "scope": "scopeRows"
+    },
+    {
+      "viewKey": "mix",
+      "title": "ประเภทสถานศึกษา",
+      "question": "แต่ละเขต/อำเภอเป็นสถานศึกษาประเภทใด",
+      "encoding": "top 12 districts × 8 groups, equal cells, own 41-sample ramp, measured zero outlined, unknown students a dash",
+      "metric": "the current measure",
+      "scope": "scopeRows"
+    },
+    {
+      "viewKey": "affs",
+      "title": "สังกัด",
+      "question": "สังกัดไหนมีนักเรียน (หรือสถานศึกษา) มากที่สุด",
+      "encoding": "bars in one neutral foundation fill, records and full name in the label",
+      "metric": "the current measure",
+      "scope": "scopeRows"
+    }
+  ],
+  "delivery": {
+    "site": "GitHub Pages from main /root",
+    "handoff": "dist/CityMETER-School-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
+    "liveCheck": "npm run verify:live",
+    "cacheTag": "?v=20261105-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+  }
+}

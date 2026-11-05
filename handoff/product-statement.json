@@ -1,0 +1,273 @@
+{
+  "$schema": "./handoff.schema.json",
+  "schemaVersion": "1.5.0",
+  "documentType": "product-statement",
+  "productId": "citymeter-school",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "dataset_id": "research.TH.school",
+  "productionDatasetCode": "school",
+  "language": "th",
+  "liveUrl": "https://montri-th.github.io/school/",
+  "markdown": "PRODUCT_STATEMENT.md",
+  "positioning": {
+    "one_line_highlight": "แผนที่เมือง 3 มิติของสถานศึกษาทั่วไทย ที่บอกว่านักเรียนกระจุกตรงไหน รอบแปลงมีโรงเรียนแบบไหน ค่าเรียนเท่าไร และมีโรงเรียนใดให้เทียบ พร้อมแหล่งของทุกตัวเลข",
+    "question": "นักเรียนกระจุกอยู่ตรงไหน และรอบแปลงมีโรงเรียนแบบไหน",
+    "unique_advantage": "นักเรียนที่ทะเบียนบันทึก (li.supply) เป็นค่าเริ่มต้น ทุกสังกัดในแผนที่เดียว ขอบเขตเดียวกับ CityMETER production และบริบทรถไฟฟ้าจากทะเบียนเดียวกัน",
+    "unique_vs_competitors": "ระบบของแต่ละสังกัดตอบทีละโรงเรียน แผนที่ค้นสถานที่ไม่รวมนักเรียนต่อพื้นที่ และรายงานที่ปรึกษาไม่ลงระดับอำเภอ — School รวมทุกสังกัด นับนักเรียนต่อเขต/อำเภอ เปิดกฎคู่เทียบเป็นชิป และเปิดย้อนถึงแหล่งได้ทุกแถว"
+  },
+  "users": {
+    "primary_users": [
+      "ทีมพัฒนาโครงการที่อยู่อาศัยและนักลงทุนที่ดิน",
+      "ผู้ประกอบการโรงเรียนเอกชนและนานาชาติ",
+      "หน่วยงานการศึกษา จังหวัด และ อปท.",
+      "ผู้ประเมินมูลค่าและสถาบันการเงิน"
+    ],
+    "functional_needs": [
+      "โรงเรียนรอบแปลงแยกประเภทและสังกัด",
+      "นักเรียนต่อเขต/อำเภอ",
+      "ค่าเรียนตามประกาศของคู่เทียบ",
+      "ระยะถึงรถไฟฟ้า",
+      "ขนาดโรงเรียนและระดับชั้น",
+      "ผลประเมิน สมศ. พร้อมปี"
+    ],
+    "emotional_needs": [
+      "มั่นใจว่าเรื่องโรงเรียนเป็นจุดขายจริง",
+      "ไม่เข้าไปในย่านที่โรงเรียนแบบเดียวกันล้น",
+      "อธิบายต่อผู้บริหารได้ด้วยหลักฐาน",
+      "ไม่ต้องเริ่มจากศูนย์ทุกครั้ง"
+    ],
+    "trigger_voice_in_head": [
+      "“รอบแปลง 2 กม. มีโรงเรียนอะไรบ้าง ค่าเทอมเท่าไร”",
+      "“ใน 2 กม. มีโรงเรียนนานาชาติกี่แห่ง”",
+      "“อำเภอเรามีโรงเรียนเล็กกี่แห่ง นักเรียนอยู่ตรงไหน”",
+      "“ขอรายชื่อโรงเรียนรอบทำเลก่อนลงพื้นที่”"
+    ],
+    "value_proposition": "ตอบ “เขตไหน นักเรียนเท่าไร รอบแปลงมีโรงเรียนอะไร เทียบกับใคร” ในหนึ่งหน้าจอภายในหนึ่งนาที และเปิดย้อนถึงแหล่งได้ทุกตัวเลข",
+    "evidence": "Hypothesis — not yet validated with external users (hypotheses_to_validate)"
+  },
+  "problem": {
+    "statement": "ข้อมูลโรงเรียนกระจัดกระจายในระบบของแต่ละสังกัด ข้อมูลเปิดของ สมศ. และหน้าเว็บของโรงเรียน ไม่มีภาพที่บอกว่านักเรียนกระจุกที่เขตใด และรอบแปลงมีโรงเรียนประเภทใด",
+    "urgency": "โครงการที่อยู่อาศัยและโรงเรียนเป็นการลงทุนที่ย้ายไม่ได้ และ “ใกล้โรงเรียนดี” เป็นเหตุผลอันดับต้นของครอบครัว (Inference)",
+    "severity": "การเลือกทำเลผิดมีต้นทุนสูงกว่าการเปลี่ยนสื่อขาย (Inference)"
+  },
+  "competitor_landscape": {
+    "present_competitors": [
+      {
+        "name": "ระบบสารสนเทศของแต่ละสังกัด",
+        "how_users_use_it": "ค้นโรงเรียนทีละแห่ง ดาวน์โหลดตาราง",
+        "strength": "เป็นทางการ",
+        "gap": "แยกตามสังกัด ไม่มีแผนที่ระดับเขต/อำเภอที่ตรงกับ production ไม่มีบริบทขนส่ง"
+      },
+      {
+        "name": "แผนที่ค้นสถานที่และเว็บรีวิวโรงเรียน",
+        "how_users_use_it": "ค้นโรงเรียนรอบจุด อ่านรีวิว",
+        "strength": "คุ้นมือ เร็ว",
+        "gap": "ไม่รวมนักเรียนเป็นยอดต่อพื้นที่ ไม่บอกสังกัดหรือที่มาของตัวเลข"
+      },
+      {
+        "name": "รายงานตลาดการศึกษาของที่ปรึกษา",
+        "how_users_use_it": "อ่านภาพรวมโรงเรียนนานาชาติ",
+        "strength": "มีบทวิเคราะห์",
+        "gap": "เฉพาะบางกลุ่ม ไม่ลงระดับอำเภอ ไม่เปิดให้ตรวจรายแถว"
+      },
+      {
+        "name": "เดินทำเลและ Street View",
+        "how_users_use_it": "ดูหน้างานรอบแปลง",
+        "strength": "เห็นของจริง",
+        "gap": "ช้า ไม่เป็นระบบ เทียบหลายทำเลไม่ได้"
+      }
+    ],
+    "aspirational_competitors": [
+      "แพลตฟอร์ม education market intelligence ที่มีข้อมูลการรับนักเรียนและที่นั่ง (ความลึกด้าน demand)",
+      "แผนที่ค้นสถานที่ระดับโลก (ความเร็วและความคุ้นเคย)"
+    ],
+    "expected_quality_bar": "หนึ่งหน้าจอ หนึ่งนาที ทุกตัวเลขมีแหล่ง ไม่ทราบไม่เป็น 0"
+  },
+  "winning_strategy": [
+    "วัดสิ่งที่การตัดสินใจสนใจ: นักเรียน (li.supply) เป็นค่าเริ่มต้น สลับเป็นจำนวนสถานศึกษาได้",
+    "ทุกสังกัดในแผนที่เดียว ขอบเขตเดียวกับ CityMETER production และลิงก์ ?d=school",
+    "ข้ามชุดข้อมูลในทะเบียนเดียวกัน: สถานีของ CityMETER · Transit และหน่วยอาคารของ CityMETER · Hotel ผูกด้วย id และ commit/sha256",
+    "คู่เทียบในคลิกเดียว: กฎเป็นชิป (ประเภท · ระดับชั้น · ≤ 2 กม.) ไม่ใช่อันดับ",
+    "ความจริงก่อนความสวย: ไม่ทราบไม่เป็น 0 · ค่าเรียนพร้อมปีการศึกษา · ผลประเมินพร้อมปี · ระยะตรง · บรรทัดที่มาทุกหน้า ไม่มีคำเตือนบนหน้าจอ"
+  ],
+  "firstFinding": {
+    "evidence": "Observed fact",
+    "students": {
+      "home": "BKK",
+      "areas": [
+        {
+          "id": "1011",
+          "name": "ลาดกระบัง",
+          "value": 40309
+        },
+        {
+          "id": "1042",
+          "name": "สายไหม",
+          "value": 33427
+        },
+        {
+          "id": "1006",
+          "name": "บางกะปิ",
+          "value": 32427
+        }
+      ],
+      "value": 106163,
+      "homeValue": 916683,
+      "sharePct": 12,
+      "rail": {
+        "m": 500,
+        "focus": {
+          "within": 620,
+          "base": 79083
+        },
+        "rest": {
+          "within": 112216,
+          "base": 648859
+        }
+      },
+      "outside": {
+        "id": "3001",
+        "name": "เมืองนครราชสีมา",
+        "province": "NMA",
+        "value": 93597
+      }
+    },
+    "records": {
+      "home": "NMA",
+      "areas": [
+        {
+          "id": "3001",
+          "name": "เมืองนครราชสีมา",
+          "value": 169
+        },
+        {
+          "id": "3021",
+          "name": "ปากช่อง",
+          "value": 110
+        },
+        {
+          "id": "3008",
+          "name": "ด่านขุนทด",
+          "value": 103
+        }
+      ],
+      "value": 382,
+      "homeValue": 1786,
+      "sharePct": 21,
+      "outside": {
+        "name": "เมืองขอนแก่น",
+        "province": "KKN",
+        "value": 212
+      }
+    },
+    "international": {
+      "home": "BKK",
+      "areas": [
+        "วัฒนา",
+        "บางนา",
+        "วังทองหลาง"
+      ],
+      "value": 13629,
+      "homeValue": 33632,
+      "sharePct": 41,
+      "rail": {
+        "focus": {
+          "within": 3537,
+          "base": 13629
+        },
+        "rest": {
+          "within": 2032,
+          "base": 19409
+        }
+      }
+    },
+    "note": "fixtures of release 0.1.0 (tests/insight.test.js, tests/views.test.js), never UI constants"
+  },
+  "data_transparency": {
+    "unit": {
+      "row": "one CityMETER school UUID of the 2026 baseline (02_SCHOOLS or 03_CHILD_CENTERS) — a source roster record, not a field-verified census of operating schools",
+      "students": "student_count of CityMETER 2026, positive values only; blank is unknown, never 0; a child development centre counts its registered children",
+      "fee": "annual tuition in THB per student per academic year, tuition only, for the grades and year the school published; not the total cost of a year, a price level or a quality level",
+      "quality": "the latest ONESQA external-assessment result the sheet selected (B.E. 2564–2567), verbatim, with its year; not a current quality level or a ranking",
+      "history": "the reported grade sum of OPEC private-school snapshots, semesters 1–2 of B.E. 2565–2567; not 2026 figures"
+    },
+    "sources": [
+      "research master “CityMETER School Thailand — Research Master 2026-10-31” (registry research.TH.school): CityMETER School 2026 of production, OPEC (สช.), ONESQA (สมศ.) open data, schools’ fee announcements",
+      "CityMETER production base info (receipts in data/boundary-receipts.json)",
+      "CityMETER · Transit (montri-th/transit @5f5232d0)",
+      "building units of CityMETER · Hotel (montri-th/hotel @177e592f)"
+    ],
+    "checkedOn": "2026-10-31",
+    "readOn": "2026-11-05",
+    "builtOn": "2026-11-05",
+    "method": "DATA_METHOD.md",
+    "tabs": {
+      "02_SCHOOLS": "c21134e782a68ab005828be260dbedc9a977d5fab6b5dd67ba3188c30e57e2a0",
+      "03_CHILD_CENTERS": "a65faa735c05c4fa541f8882d2d2a326201b518756f04d605035d114730dbc2b",
+      "99_SOURCE_2026": "eb906163d2652a4d4017a49d286034f68b32be575a651f66207146a6494400d2",
+      "01_AFFILIATIONS": "a8f496a0848a230c90e9a40058b594cf19f1a1d15ffcd88b2f7e50cfa2e43ca9",
+      "15_RESEARCH_COVERAGE": "2d4020b3324183b31e271f5e61db6dae4ecb62c799bb81256d8dbcdd8f867123",
+      "16_ENROLMENT": "6c1f3640e9bab6c2b428d1a14e1d37b898dc3311e508336a1073fdfec04990d4",
+      "20_SCHOOL_FEES": "9c4fdcd39a9df53c57501cbffe740d7af107622c178b6d6daae43edb3b74059d",
+      "10_SOURCES": "311602bd8dd3fafc926c3582f70e02e5741fe51eeb677907ddfa900e46afdf96"
+    }
+  },
+  "known_limitations": [
+    "Records are roster records of CityMETER School 2026; operation is not field-verified and the roster is not a census.",
+    "Students are the recorded student_count; 490 records have no known count (counted apart, never 0); a child development centre counts its registered children.",
+    "Grade codes exist for สพฐ. schools only; every other record is “ไม่ทราบระดับชั้น”.",
+    "Tuition is published for 86 schools only; a school without tuition in the data is not free; 6 sources are private copies or http pages and are not linked.",
+    "The ONESQA result is the one the sheet selected (B.E. 2564–2567), verbatim; not a current quality level.",
+    "Distances are straight lines between reference points; points are registry points, not entrances or campuses.",
+    "Building units come from the CityMETER · Hotel build: schools in local administrations it did not evaluate stand among OpenStreetMap buildings."
+  ],
+  "claimBoundary": {
+    "canSay": [
+      "นักเรียนที่ทะเบียนบันทึกกระจุกที่ใด",
+      "ประเภท สังกัด ขนาด และระดับชั้น (สพฐ.) ของสถานศึกษา",
+      "ระยะตรงถึงสถานี",
+      "ค่าเรียนที่โรงเรียนประกาศสำหรับปีการศึกษาใด",
+      "ผลประเมิน สมศ. ปีใดว่าอย่างไร"
+    ],
+    "cannotSay": [
+      "อันดับหรือคุณภาพโรงเรียนวันนี้",
+      "ที่นั่งว่างหรือความต้องการ",
+      "จำนวนเด็กในวัยเรียนหรืออัตราการเข้าเรียน",
+      "ส่วนแบ่งตลาดหรือรายได้",
+      "ค่าใช้จ่ายทั้งปี",
+      "เขตพื้นที่บริการ",
+      "ความหนาแน่นต่อพื้นที่หรือต่อประชากร",
+      "ว่าโรงเรียนเปิดสอนอยู่วันนี้",
+      "ระยะเดินหรือเวลาเดินทาง",
+      "ว่าโรงเรียนที่ไม่มีค่าเรียนในข้อมูลเรียนฟรี"
+    ]
+  },
+  "hypotheses_to_validate": [
+    {
+      "hypothesis": "ทีมพัฒนาโครงการใช้ “โรงเรียนรอบแปลง” ในการคัดทำเลบ้านสำหรับครอบครัว",
+      "test": "ให้ 5 ทีมเทียบ 3 แปลงโดยใช้และไม่ใช้เดโม",
+      "criterion": "การจัดอันดับเปลี่ยนหรือมั่นใจขึ้นใน ≥ 3 ใน 5 ทีม"
+    },
+    {
+      "hypothesis": "ผู้ประกอบการโรงเรียนใช้ “นักเรียน” มากกว่า “แห่ง” ในการเลือกทำเล",
+      "test": "สัมภาษณ์ 5 คนด้วยคำถามทำเลจริง",
+      "criterion": "≥ 70% เลือกนักเรียนเป็นมาตรวัดแรก"
+    },
+    {
+      "hypothesis": "คู่เทียบ 2 กม. ใกล้กับรายชื่อที่ผู้ประกอบการเลือกเอง",
+      "test": "เทียบกับรายชื่อคู่แข่งของโรงเรียน 10 แห่ง",
+      "criterion": "ทับซ้อน ≥ 50% ของ 5 อันดับแรก"
+    },
+    {
+      "hypothesis": "หน่วยงานการศึกษา/อปท. ใช้นักเรียนต่ออำเภอและขนาดโรงเรียนในการวางแผน",
+      "test": "ทดลองกับ 2 จังหวัดนำร่อง",
+      "criterion": "ใช้ตัวเลขในเอกสารวางแผนจริงอย่างน้อย 1 ฉบับ"
+    },
+    {
+      "hypothesis": "นักเรียนที่ทะเบียนบันทึกใกล้เคียงนักเรียนที่เรียนอยู่จริงพอสำหรับการคัดกรอง",
+      "test": "สุ่มตรวจ 200 แห่งกับระบบของสังกัด",
+      "criterion": "คลาดไม่เกิน 10% ใน ≥ 80% ของตัวอย่าง"
+    }
+  ]
+}

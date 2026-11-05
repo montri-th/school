@@ -1,0 +1,380 @@
+{
+  "$schema": "./handoff.schema.json",
+  "schemaVersion": "1.5.0",
+  "documentType": "implementation-plan",
+  "productId": "citymeter-school",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "architecture": {
+    "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
+    "commands": {
+      "test": "node --test tests/*.test.js",
+      "start": "python3 -m http.server 4173 --bind 127.0.0.1",
+      "build:base": "python3 -I scripts/fetch-base.py --help",
+      "build:boundaries": "python3 -I scripts/build-boundaries.py --help",
+      "build:receipts": "python3 -I scripts/build-receipts.py --help",
+      "build:data": "python3 -I scripts/build-data.py --help",
+      "check:lds": "node scripts/check-lds-parity.mjs",
+      "handoff:manifest": "node scripts/build-handoff.mjs",
+      "handoff:bundle": "node scripts/build-handoff.mjs --zip dist/CityMETER-School-Developer-Handoff.zip",
+      "verify:live": "node scripts/verify-live.mjs",
+      "build:units": "python3 -I scripts/adapt-building-units.py --help"
+    },
+    "libraries": {
+      "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/maplibre-guard.js)",
+      "earcut": "js/vendor/earcut.js (ISC)",
+      "tiles": "OpenFreeMap planet (OpenMapTiles schema)"
+    },
+    "modules": {
+      "js/app.js": "orchestration: row scopes, focus modes, panels, map layers, building camera, URL state",
+      "js/model.js": "decode data/schools.json; measures (students | count), groups, levels, sizes, pin sizes, importance, filters, summaries",
+      "js/areas.js": "district index, frames, per-district totals (students, records, unknown students)",
+      "js/area-insight.js": "the first Aha (home province, top districts, rail comparison, outside finding)",
+      "js/profile-model.js": "overview, district, station, affiliation, building and school models; comparison set; enrolment history",
+      "js/panel.js": "reading panel views as HTML strings (provenance line, no caveat)",
+      "js/charts.js": "district bars, district × group matrix, affiliation bars",
+      "js/chart-model.js": "chart models over scopeRows",
+      "js/map-layers.js": "district choropleth (li.supply | count, 41 samples), labels",
+      "js/provinces.js": "province frames below zoom 8",
+      "js/frames.js": "district outlines per province on demand",
+      "js/scales.js": "LDS count and LI li.supply ramps (41 samples by rank)",
+      "js/cues.js": "school group → LDS series + shape cue",
+      "js/pins.js": "one symbol per row with a point, area ∝ students; HTML pins from zoom 15.5",
+      "js/stations.js": "CityMETER · Transit stations and the 500 m radius",
+      "js/ask.js": "Google AI / Maps / Street View actions per view",
+      "js/breadcrumb.js": "ประเทศไทย › จังหวัด › เขต/อำเภอ with production deep links (?d=school)",
+      "js/building-join.js": "display-time point-in-footprint join; nearest drawn building for the camera",
+      "js/massing.js": "city and focus massing tiers; CityMETER Building V4 inside CityMETER units (shapeCmTile, planCmRequests), OSM parts override, context layer, credit",
+      "js/camera.js": "presets, pitched fits and the building camera (terrain-aware: groundAt, projectAltitude)",
+      "js/venue-xray.js": "the building being looked at drawn over every other building",
+      "js/map-style.js": "basemap generated from theme tokens",
+      "js/maplibre-guard.js": "MapLibre 5.6.2 tile-cover and elevation-freeze guards",
+      "js/mvt.js": "vector tile decoding for the focus tier",
+      "js/geometry.js": "rounding and enclosure of footprints",
+      "js/navigation.js": "nav-7 and pictogram font contracts, help dialog",
+      "js/vendors.js": "pinned MapLibre loader",
+      "js/launch.js": "classic launch script (loading, errors, file:// bridge to the public site)",
+      "js/labels.js": "names near the middle of the view (importance = students + published tuition percentiles), short names, hover card of icon chips",
+      "js/terrain.js": "terrain mode at hilly sites and round a building or school; the terrain facts of a school",
+      "js/building-units.js": "buildings per area: the per-province unit files (data/building-units/), CityMETER zones, production tile URLs and the attribution"
+    },
+    "data": [
+      "data/schools.json",
+      "data/area-index.json",
+      "data/frames/{CODE}.json",
+      "data/provinces.geojson",
+      "data/boundary-receipts.json",
+      "data/building-units/"
+    ]
+  },
+  "selection": {
+    "filterFields": [
+      "search",
+      "group",
+      "level",
+      "size",
+      "province",
+      "aff"
+    ],
+    "queryFields": [
+      "metric",
+      "area",
+      "areas",
+      "view",
+      "school",
+      "station",
+      "view3d"
+    ],
+    "rowScopes": {
+      "scopeRows": "rows after search · group · level · size · province · affiliation, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
+      "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
+      "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table"
+    },
+    "panelActions": [
+      "select-area",
+      "select-school",
+      "select-building",
+      "select-station",
+      "select-province",
+      "filter-aff",
+      "filter-group",
+      "filter-level",
+      "set-metric",
+      "back",
+      "explore-top",
+      "clear-focus",
+      "open-charts",
+      "open-table",
+      "clear-filter",
+      "leave-area"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Read the research master (35 MB) cell by cell in the owner’s browser; tab hashes",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "A1"
+      ],
+      "files": [
+        "scripts/export-sheet-tabs.js",
+        "scripts/decode-sheet-payload.py"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T2",
+      "title": "Data build: rows, groups, affiliations, levels, points, tuition, assessment, history, rail; reconciliations",
+      "dependsOn": [
+        "T1"
+      ],
+      "acceptanceCriteria": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "files": [
+        "scripts/build-data.py",
+        "data/schools.json",
+        "data/build-report.json"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T3",
+      "title": "Gazetteer receipts and building units from the Hotel build",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "A6"
+      ],
+      "files": [
+        "scripts/build-receipts.py",
+        "scripts/adapt-building-units.py",
+        "data/boundary-receipts.json",
+        "data/area-index.json",
+        "data/building-units/"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T4",
+      "title": "Model, profiles, charts for students and records",
+      "dependsOn": [
+        "T2"
+      ],
+      "acceptanceCriteria": [
+        "A7",
+        "A8",
+        "A9"
+      ],
+      "files": [
+        "js/model.js",
+        "js/profile-model.js",
+        "js/chart-model.js",
+        "js/charts.js",
+        "js/areas.js",
+        "js/area-insight.js",
+        "js/provinces.js",
+        "js/map-layers.js"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T5",
+      "title": "Panels, labels, pins, legend, filters, table in school words",
+      "dependsOn": [
+        "T4"
+      ],
+      "acceptanceCriteria": [
+        "A10",
+        "A11",
+        "A12"
+      ],
+      "files": [
+        "js/panel.js",
+        "js/labels.js",
+        "js/pins.js",
+        "js/app.js",
+        "index.html",
+        "styles.css",
+        "js/ask.js"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T6",
+      "title": "Pictogram subset for schools",
+      "dependsOn": [],
+      "acceptanceCriteria": [
+        "A13"
+      ],
+      "files": [
+        "scripts/build-pictogram-font.py",
+        "assets/icons/material-pictogram-300.woff2",
+        "assets/icons/material-pictogram-300.json",
+        "js/navigation.js"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T7",
+      "title": "Docs, handoff, tests",
+      "dependsOn": [
+        "T5"
+      ],
+      "acceptanceCriteria": [
+        "A14"
+      ],
+      "files": [
+        "README.md",
+        "AGENTS.md",
+        "DATA_METHOD.md",
+        "PRODUCT_STATEMENT.md",
+        "llms.txt",
+        "handoff/",
+        "tests/"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T8",
+      "title": "Publish (GitHub Pages), live attestation, registry row",
+      "dependsOn": [
+        "T7"
+      ],
+      "acceptanceCriteria": [
+        "A14"
+      ],
+      "files": [
+        "handoff/VERIFICATION.md"
+      ],
+      "status": "done"
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "id": "A1",
+      "scenario": "decode schools.json",
+      "expected": "40,828 rows = 02_SCHOOLS + 03_CHILD_CENTERS = 99_SOURCE_2026, nothing dropped, UUIDs unique, each tab hashed",
+      "verificationType": "unit (tests/data.test.js)"
+    },
+    {
+      "id": "A2",
+      "scenario": "measure contract",
+      "expected": "students known 40,338, Σ 10,134,747; unknown never 0; SchoolSize bands",
+      "verificationType": "unit (tests/data.test.js)"
+    },
+    {
+      "id": "A3",
+      "scenario": "groups and affiliations",
+      "expected": "counts per group; group follows affiliation; filters partition the rows",
+      "verificationType": "unit (tests/data.test.js)"
+    },
+    {
+      "id": "A4",
+      "scenario": "levels",
+      "expected": "grade ranges from codes; unknown grades in no level; level filter incl. unknown",
+      "verificationType": "unit (tests/data.test.js, tests/views.test.js)"
+    },
+    {
+      "id": "A5",
+      "scenario": "tuition, assessment, history, closure",
+      "expected": "per school, with year and a public https source or no link",
+      "verificationType": "unit (tests/data.test.js)"
+    },
+    {
+      "id": "A6",
+      "scenario": "boundaries and receipts",
+      "expected": "928 districts, 77 provinces, 78 receipts bound by hash; the dataset built on the same gazetteer",
+      "verificationType": "unit (tests/data.test.js)"
+    },
+    {
+      "id": "A7",
+      "scenario": "first Aha",
+      "expected": "BKK 12% in ลาดกระบัง · สายไหม · บางกะปิ; rail 1% vs 17%; outside เมืองนครราชสีมา 93,597",
+      "verificationType": "unit (tests/insight.test.js)"
+    },
+    {
+      "id": "A8",
+      "scenario": "district model",
+      "expected": "EVID-05 states; ramp 398–93,597, 41 samples",
+      "verificationType": "unit (tests/insight.test.js, tests/scales.test.js)"
+    },
+    {
+      "id": "A9",
+      "scenario": "charts",
+      "expected": "districts by the measure, matrix with equal cells, affiliations by the measure",
+      "verificationType": "unit (tests/views.test.js)"
+    },
+    {
+      "id": "A10",
+      "scenario": "panels",
+      "expected": "one provenance line per view, no caveat, no “0 คน”",
+      "verificationType": "unit (tests/views.test.js)"
+    },
+    {
+      "id": "A11",
+      "scenario": "comparison set",
+      "expected": "same group, shared level when known, ≤ 2 km, nearest first",
+      "verificationType": "unit (tests/views.test.js)"
+    },
+    {
+      "id": "A12",
+      "scenario": "labels and pins",
+      "expected": "short names drop the type word; area ∝ students; hollow unknown",
+      "verificationType": "unit (tests/labels.test.js, tests/pins.test.js)"
+    },
+    {
+      "id": "A13",
+      "scenario": "icon fonts",
+      "expected": "file = contract, content-addressed URL",
+      "verificationType": "unit (tests/icons.test.js)"
+    },
+    {
+      "id": "A14",
+      "scenario": "release",
+      "expected": "one cache tag, one version, schema-valid handoff, hygiene; live bytes = repository",
+      "verificationType": "unit (tests/release.test.js) + npm run verify:live"
+    }
+  ],
+  "developerWorkflow": [
+    "edit the research sheet only (never data/)",
+    "read the tabs: scripts/export-sheet-tabs.js → scripts/decode-sheet-payload.py",
+    "python3 -I scripts/build-data.py … (DATA_METHOD.md §13)",
+    "npm test",
+    "npm run check:lds -- --lds <base> --li <profile>",
+    "bump ?v=YYYYMMDD-rN + package.json + design-intent.json + handoff JSON",
+    "push main → GitHub Pages → npm run handoff:manifest → npm run verify:live",
+    "walk the live site at 1440 and 390 px, light and dark"
+  ],
+  "backlog": [
+    {
+      "id": "B1",
+      "item": "Grade codes for schools outside สพฐ. (level filter and comparison rule for private, international, local, vocational)",
+      "evidence": "research follow-up"
+    },
+    {
+      "id": "B2",
+      "item": "Tuition for the private schools not yet researched; public https sources for the 6 private copies",
+      "evidence": "research follow-up"
+    },
+    {
+      "id": "B3",
+      "item": "Evaluate CityMETER Building V4 for every อปท. holding a school (the Hotel units cover hotel-holding units only)",
+      "evidence": "planned"
+    },
+    {
+      "id": "B4",
+      "item": "Points for the 7,750 rows without an accepted point (child development centres above all)",
+      "evidence": "research follow-up"
+    },
+    {
+      "id": "B5",
+      "item": "School-age population from a registry dataset, as context beside the students (never a ratio without its denominator)",
+      "evidence": "planned"
+    }
+  ]
+}
