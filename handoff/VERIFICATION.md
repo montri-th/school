@@ -51,8 +51,21 @@ basemap, no OSM buildings), the data layers real. Desktop 1440 × 900 light and 
 
 ## 5. Live
 
-Recorded after publishing to GitHub Pages (next commit): `npm run verify:live` byte attestation and a walk of the live
-site with the real basemap at desktop and 390 px, light and dark.
+GitHub Pages (main / root), enabled on 2026-11-06 (ICT) for the release commit `fa145a4` (committed 2026-11-06T00:14+07:00):
+
+- `npm run verify:live` (2026-11-05T17:16:42Z): **243 ok, 0 failed** — every published file of the manifest at
+  `fa145a4` byte-identical (SHA-256) on https://montri-th.github.io/school/ (`evidence/live-attestation.json`, not
+  committed); the root document serves the `index.html` bytes.
+- Walk in the owner's Chrome with the real basemap, terrain and building tiles. The window could not be resized
+  (606 × 675), so the desktop and phone views were opened in same-origin frames of the live site at 1440 × 900 and
+  390 × 844, as in the Hotel walks: desktop dark — the first screen (Aha, rail bars, legend, the three focused districts
+  over OpenFreeMap); desktop light — `?school=714599d9-…` (มัธยมวัดธาตุทอง): the map turned 3D and framed the drawn
+  CityMETER Building V4 building nearest the pin in two-point perspective (legend “อาคารใกล้หมุด”, attribution
+  “อาคาร: CityMETER Building V4”), terrain chips read from the DEM; phone light — `?area=1039` with the sheet open;
+  phone dark — the first screen with the dock. Launch state `ready`, map loaded, no map failure, no console error.
+- Seen in the walk, by design: where a school's registry point lies outside every drawn outline, the nearest drawn
+  building can be a neighbouring tower (มัธยมวัดธาตุทอง); the camera names it “อาคารใกล้หมุด” and never lists the
+  school in it (DATA_METHOD §วิธีนับ).
 
 ## 6. Not verified
 
