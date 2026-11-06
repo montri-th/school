@@ -59,7 +59,22 @@ no console error:
 
 ### 0.2.0 · 5. Live
 
-Recorded after the push (below).
+GitHub Pages (main / root), 2026-11-06:
+
+- `9896285` (cache tag `20261106-r1`): `npm run verify:live` (2026-11-06T05:10:54Z) **246 ok, 0 failed**. The walk of that
+  build (desktop dark `?metric=learning`, desktop light `?learn=…`, phone light `?school=…`, phone dark `?metric=learning`)
+  found one wording slip: the legend named the building holding a learning record's pin “อาคารของสถานศึกษา”. Fixed in
+  `05c4759` (“อาคารของสถานที่เรียนเสริม”, cache tag `20261106-r2`).
+- `05c4759`: `npm run verify:live` (2026-11-06T05:16:24Z) **246 ok, 0 failed** — every published file of the manifest
+  byte-identical (SHA-256) on https://montri-th.github.io/school/ (`evidence/live-attestation.json`, not committed).
+- Walk of `05c4759` in the owner's Chrome with the real basemap, terrain and building tiles, in same-origin frames of the
+  live site at 1440 × 900 and 390 × 844 as in 0.1.0 (the window is 1280 × 699): desktop dark — `?learn=L40cbe1edaf23`: the
+  map turned 3D and framed the CityMETER Building V4 building holding the pin in two-point perspective (legend
+  “อาคารของสถานที่เรียนเสริม”, attribution “อาคาร: CityMETER Building V4”), the record with “อีก 1 แห่งในอาคารนี้” and
+  the other records of เขตปทุมวัน (93: กวดวิชา 38 · ภาษา 40 · ศิลปะ 19); desktop light — `?metric=learning` (22%, 68% · 34%);
+  phone light — `?metric=learning&area=1007` with the sheet open (94 · 29 มีหมุด · 10% · 93%); phone dark —
+  `?school=a3f417ac-…` in 3D with its learning section (94 in the district, 23 pinned within 1 km). Launch state `ready`
+  in every view, no map failure, no console error; the viewer's theme setting was put back to “auto”.
 
 ## Release 0.1.0
 
