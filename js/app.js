@@ -893,7 +893,8 @@ function applyJoin() {
   state.blueBuildings = n > 0;
   document.querySelector('.map-panel')?.classList.toggle('has-open-building', state.blueBuildings);
   const label = $('legend-building-label');
-  if (label) label.textContent = currentBuilding() ? 'อาคารที่เปิด' : focusTarget()?.near ? 'อาคารใกล้หมุด' : 'อาคารของสถานศึกษา';
+  if (label) label.textContent = currentBuilding() ? 'อาคารที่เปิด' : focusTarget()?.near ? 'อาคารใกล้หมุด'
+    : isLearning(rowById(state.panel.id)) ? 'อาคารของสถานที่เรียนเสริม' : 'อาคารของสถานศึกษา';
   if (panelSpatialSig() !== state.renderedSig) renderPanel();
   syncFocusBuilding();
   refitOnNewBuilding();

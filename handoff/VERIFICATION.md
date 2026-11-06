@@ -2,7 +2,7 @@
 
 ## Release 0.2.0 — learning services
 
-Release 0.2.0 (cache tag `20261106-r1`), built 2026-11-06 on the owner's request of the same day (“เพิ่ม … 27_LEARNING_SERVICES
+Release 0.2.0 (cache tag `20261106-r2`; `-r1` was the first deploy of the day, see §5), built 2026-11-06 on the owner's request of the same day (“เพิ่ม … 27_LEARNING_SERVICES
 และข้อมูลที่อัพเดทเพิ่มมาในชีทด้วย”; the district level, the third measure and checked pins chosen by the owner). Tabs
 27–29 of the research master were read cell by cell on 2026-11-06; the school tabs read again the same day differ from the
 5 Nov read only in how 97 multi-link cells render their line breaks and in one no-break space (DATA_METHOD.md §12), so
