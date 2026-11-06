@@ -53,7 +53,7 @@ export const SUPPLY_SCALE = freeze({
 });
 
 /** The family of a measure: students → li.supply, records → count. */
-export const scaleFor = metric => (metric === 'count' ? COUNT_SCALE : SUPPLY_SCALE);
+export const scaleFor = metric => (metric === 'count' || metric === 'learning' ? COUNT_SCALE : SUPPLY_SCALE);
 
 /** WCAG relative-luminance contrast ratio (used for ink choice and tests). */
 export function contrastRatio(hexA, hexB) {

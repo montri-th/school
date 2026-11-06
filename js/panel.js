@@ -4,7 +4,7 @@
  * Every actionable element carries data-action (+ data-id / data-value); the app binds one delegated handler.
  * Actions: select-area · select-school · select-building · select-station · select-province · filter-aff ·
  * filter-group · filter-level · set-metric · back · explore-top · clear-focus · open-charts · open-table · clear-filter ·
- * leave-area.
+ * leave-area · filter-service.
  *
  * Copy (the Hotel rule of 2026-11-01, “เรื่องภาษา ขอที่ กระชับอ่านเข้าใจง่าย ใช้ symbol, logo, icon, charts มาช่วยทำให้
  * text กระชับ … ตรงกับ context ของ ICP ตาม product statement ไม่มี caveats เลย และเป็นธรรมชาติ”): short Thai in the words
@@ -12,8 +12,10 @@
  * carry what a sentence used to; no caveat on screen. Exactness comes from the names themselves — “ค่าเรียน … ปีการศึกษา”,
  * “ผลประเมิน สมศ. ปี …”, a rank “จาก N”, the numerator and denominator of every share (visible, or in the tile's title
  * and accessible name) — and from one provenance line per view: dataset · source · date · boundary, then “วิธีนับ”
- * (DATA_METHOD.md, where the method and its limits live). Two measures (js/model.js#METRICS): นักเรียน (default) ·
- * สถานศึกษา. Unknown students are never 0 (“ไม่ทราบจำนวนนักเรียน”, a hatched “ไม่ทราบ” bar). Tuition per school only,
+ * (DATA_METHOD.md, where the method and its limits live). Three measures (js/model.js#METRICS): นักเรียน (default) ·
+ * สถานศึกษา · เรียนเสริม (0.2.0: its own rows and views — renderLearning*; the school views list the district's
+ * learning records by service and the pinned ones near the school or station; services overlap, so a service bar
+ * counts a record in each of its services while a total counts it once). Unknown students are never 0 (“ไม่ทราบจำนวนนักเรียน”, a hatched “ไม่ทราบ” bar). Tuition per school only,
  * never summed or averaged across schools. Distances are straight lines (the distance pictogram; “ระยะตรง” in titles).
  * A school's pin inside a drawn building is “สถานศึกษาในอาคารนี้” / “อีก N แห่งในอาคารนี้”, never “ตั้งอยู่ใน”. Sources,
  * methods and ids sit in one closed <details>.
@@ -22,6 +24,7 @@ import {productionLink, provinceByCode, hasPoint, stationLink, SIZE_BANDS, LEVEL
 import {areaWord} from './areas.js';
 import {cueMarkup} from './cues.js';
 import {actionBar} from './ask.js';
+import {LEARNING_SERIES, SERVICE_PICTOGRAM, POINT_TH} from './learning.js';
 
 const NUMBER = new Intl.NumberFormat('th-TH', {maximumFractionDigits: 0});
 export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
@@ -103,9 +106,10 @@ export const ADMIN_TH = Object.freeze({
  * `data-prov`, its word for screen readers), then the method link. Rail, OPEC, ONESQA, fee and terrain sources join
  * the source part when the view shows them.
  */
-export function provenance(ctx = {}, boundary = '', {rail = false, terrain = false, opec = false, onesqa = false, fees = false} = {}) {
+export function provenance(ctx = {}, boundary = '', {rail = false, terrain = false, opec = false, onesqa = false, fees = false, learn = false, learnOnly = false, provider = false} = {}) {
   const meta = ctx.meta || {};
-  const sources = ['CityMETER School 2569',
+  // Learning views (0.2.0) read the OPEC nonformal-school register of the same research master (tabs 27–29).
+  const sources = [learnOnly ? '' : 'CityMETER School 2569', learn || learnOnly ? 'ทะเบียนโรงเรียนนอกระบบ สช. (เรียนเสริม)' : '', provider ? 'ผู้ให้บริการ' : '',
     opec ? 'สช. (OPEC)' : '', onesqa ? 'สมศ. (ONESQA)' : '', fees ? 'ประกาศค่าเรียนของโรงเรียน' : '',
     rail ? `CityMETER Transit ${thaiDate(meta.context?.rail?.asOf || '')}`.trim() : '',
     terrain ? `SRTM 30 ม. (2543)${ctx.osmDate ? ` · OSM ${thaiDate(ctx.osmDate)}` : ''}` : ''].filter(Boolean);
@@ -187,8 +191,8 @@ function areaRanking(list, classOf, unit, {title, note = '', limit = 10, showPro
   return `<section class="panel-section" aria-labelledby="${esc(id)}">
     <div class="section-heading">${heading('area', title, id)}<span class="hint">${esc(note)}</span></div>
     <ol class="rank-list">${top.map((a, i) => {
-      const other = unit.id === 'count' ? studentsOf(a.students, a.count) : `${num(a.count)} แห่ง`;
-      const where = `${showProvince ? `${provinceName(a.province)} · ` : ''}${num(a.value)} ${unit.one} · ${other}`;
+      const other = unit.id === 'learning' ? '' : unit.id === 'count' ? studentsOf(a.students, a.count) : `${num(a.count)} แห่ง`;
+      const where = [`${showProvince ? `${provinceName(a.province)} · ` : ''}${num(a.value)} ${unit.one}`, other].filter(Boolean).join(' · ');
       return `<li><button type="button" class="rank-row" data-action="select-area" data-id="${esc(a.id)}" aria-label="อันดับ ${i + 1} ${esc(placeName(a))} ${showProvince ? esc(provinceName(a.province)) : ''} ${num(a.value)} ${esc(unit.one)} ${esc(other)}">
         <span class="rank-index data-number" aria-hidden="true">${i + 1}</span>
         <span class="rank-name">${esc(placeName(a))}<small>${esc(where)}</small></span>
@@ -206,7 +210,7 @@ function stationRanking(list, unit, {title = 'สถานีที่มีน�
   return `<section class="panel-section"><div class="section-heading">${heading('rail', title)}<span class="hint" title="ระยะตรงจากสถานีที่เปิดแล้ว">${pic('distance', 'hint-pic')}≤ 500 ม.</span></div>
     <ol class="rank-list">${top.map((s, i) => `<li><button type="button" class="rank-row" data-action="select-station" data-id="${esc(s.station.id)}" aria-label="${esc(stationName(s.station))} ${num(s.value)} ${esc(unit.one)}">
       <span class="rank-index data-number" aria-hidden="true">${i + 1}</span>
-      <span class="rank-name">${esc(stationShort(s.station))}<small>${esc(`${num(s.count)} แห่ง · ${studentsOf(s.students, s.count)}`)}</small></span>
+      <span class="rank-name">${esc(stationShort(s.station))}<small>${esc(unit.id === 'learning' ? `${num(s.count)} แห่ง` : `${num(s.count)} แห่ง · ${studentsOf(s.students, s.count)}`)}</small></span>
       <span class="rank-track" aria-hidden="true"><span class="rank-fill rail-fill" style="width:${Math.max(3, Math.round((s.value / max) * 100))}%"></span></span>
       <span class="rank-value data-number" aria-hidden="true">${num(s.value)}</span></button></li>`).join('')}</ol></section>`;
 }
@@ -268,43 +272,66 @@ function railCompare(insight, unit, count, w) {
 /**
  * focusMode: 'auto' (default top districts) · 'explicit' (user-chosen) · 'none' (every district).
  */
-export function renderOverview({insight, summary, overview, focusMode = 'auto', classOf = () => 'var(--scale-count-3)', provinces = [], unknownProvince = 0,
-  province = '', affCard = '', stations = [], ctx = {}}) {
-  const unit = ctx.unit;
+/** The Aha block of the overview (any measure): the finding, its numerator and denominator, rail and the outside line. */
+function ahaBlock({insight, summary, overview, focusMode, unit, province}) {
   const count = insight.areas.length;
   const w = words(insight.areas);
   const names = insight.areas.map(a => `<button type="button" class="link-button" data-action="select-area" data-id="${esc(a.id)}">${esc(a.name)}</button>`).join(' · ');
   const home = provinceName(insight.home);
-  let aha;
   if (!summary.count && focusMode !== 'explicit') {
-    aha = `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p><h2>ไม่พบสถานศึกษาตามตัวกรองนี้</h2>
+    return `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p><h2>ไม่พบ${esc(unit.id === 'learning' ? unit.subject : 'สถานศึกษา')}ตามตัวกรองนี้</h2>
       <div class="aha-actions"><button type="button" data-action="clear-filter" data-id="all" class="btn">ล้างตัวกรอง</button></div></section>`;
-  } else if (focusMode === 'explicit') {
-    aha = `<section class="aha is-focused" aria-label="ข้อค้นพบ"><p class="eyebrow">โฟกัส ${num(count)} ${esc(w)}</p>
+  }
+  if (focusMode === 'explicit') {
+    return `<section class="aha is-focused" aria-label="ข้อค้นพบ"><p class="eyebrow">โฟกัส ${num(count)} ${esc(w)}</p>
       <h2>${insight.areas.map(a => esc(a.name)).join(' · ')}</h2>
-      <p class="aha-copy">${valueText(insight.value, unit)}${unit.id === 'count' ? '' : ` · ${nw(`${num(insight.count)} แห่ง`)}`}</p>
+      <p class="aha-copy">${valueText(insight.value, unit)}${unit.id === 'students' ? ` · ${nw(`${num(insight.count)} แห่ง`)}` : ''}</p>
       <div class="aha-actions"><button type="button" data-action="clear-focus" class="btn">ดูทุกพื้นที่</button><button type="button" data-action="open-charts" class="btn quiet">เปรียบเทียบพื้นที่</button></div></section>`;
-  } else if (!count && insight.spread) {
+  }
+  if (!count && insight.spread) {
     const sw = areaWord(insight.home), sp = insight.spread;
-    aha = `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p>
+    return `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p>
       <h2><span class="aha-number data-number">${num(sp.areas)}</span><span class="aha-headline">${esc(sw)}ใน${esc(home)} มี${esc(unit.subject)}เท่ากัน ${esc(sw)}ละ ${num(sp.value)} ${esc(unit.one)}</span></h2>
       ${outsideLine(insight, home, unit, province)}
       <div class="aha-actions"><button type="button" data-action="open-charts" class="btn quiet">เปรียบเทียบพื้นที่</button></div></section>`;
-  } else if (!count) {
-    aha = `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p><h2><span class="aha-number data-number">${num(summary.count)}</span><span class="aha-headline">แห่ง · ไม่ระบุเขต/อำเภอ</span></h2>
+  }
+  if (!count) {
+    return `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p><h2><span class="aha-number data-number">${num(summary.count)}</span><span class="aha-headline">แห่ง · ไม่ระบุเขต/อำเภอ</span></h2>
       <div class="aha-actions"><button type="button" data-action="open-table" class="btn">ดูรายชื่อ</button></div></section>`;
-  } else {
-    const toggle = focusMode === 'auto'
-      ? '<button type="button" data-action="clear-focus" class="btn">ดูทุกพื้นที่</button>'
-      : `<button type="button" data-action="explore-top" class="btn primary">โฟกัส ${num(count)} ${esc(w)}นี้</button>`;
-    const where = count === 1 ? esc(placeName(insight.areas[0])) : ` ${nw(`${num(count)} ${esc(w)}นี้`)}`;
-    const total = insight.homeValue ?? insight.homePlacedValue;
-    aha = `<section class="aha${focusMode === 'auto' ? ' is-auto' : ''}" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p>
+  }
+  const toggle = focusMode === 'auto'
+    ? '<button type="button" data-action="clear-focus" class="btn">ดูทุกพื้นที่</button>'
+    : `<button type="button" data-action="explore-top" class="btn primary">โฟกัส ${num(count)} ${esc(w)}นี้</button>`;
+  const where = count === 1 ? esc(placeName(insight.areas[0])) : ` ${nw(`${num(count)} ${esc(w)}นี้`)}`;
+  const total = insight.homeValue ?? insight.homePlacedValue;
+  return `<section class="aha${focusMode === 'auto' ? ' is-auto' : ''}" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p>
       <h2><span class="aha-number data-number">${pct(insight.value, total)}</span><span class="aha-headline">ของ${esc(unit.subject)}${esc(home)} อยู่ใน${where}</span></h2>
       <p class="aha-copy">${names}<br>${nw(`<strong class="data-number">${num(insight.value)}</strong> จาก ${num(total)} ${esc(unit.one)}`)}</p>
       ${railCompare(insight, unit, count, w)}${outsideLine(insight, home, unit, province)}
       <div class="aha-actions">${toggle}<button type="button" data-action="open-charts" class="btn quiet">เปรียบเทียบพื้นที่</button></div></section>`;
-  }
+}
+
+/** Provinces with the most of the measure (below the Aha of the national overview). */
+function provinceListBlock(provinces, unit, unknownProvince) {
+  const provinceRows = p => `<li><button type="button" class="province-row" data-action="select-province" data-id="${esc(p.code)}" aria-label="${esc(p.name)} ${num(p.value)} ${esc(unit.one)} กดเพื่อดูจังหวัด"><i class="province-swatch" style="background:${esc(p.fill)}" aria-hidden="true"></i><span class="province-name">${esc(p.name)}</span><span class="province-count data-number">${num(p.value)}<small>${esc(unit.one)}</small></span></button></li>`;
+  const shown = provinces.slice(0, 8), rest = provinces.slice(8);
+  const unknown = unknownProvince ? `<p class="hint">ไม่ระบุจังหวัด ${nw(`${num(unknownProvince)} แห่ง`)}</p>` : '';
+  return provinces.length > 1 ? `<section class="panel-section" aria-labelledby="province-title">
+    <div class="section-heading">${heading('province', `จังหวัดที่มี${unit.subject}มากที่สุด`, 'province-title')}<span class="hint">${num(provinces.length)} จังหวัด</span></div>
+    <ul class="province-list">${shown.map(provinceRows).join('')}</ul>
+    ${rest.length ? `<details class="more-provinces"><summary>อีก ${num(rest.length)} จังหวัด</summary><ul class="province-list">${rest.map(provinceRows).join('')}</ul></details>` : ''}
+    ${unknown}</section>` : '';
+}
+
+/**
+ * focusMode: 'auto' (default top districts) · 'explicit' (user-chosen) · 'none' (every district).
+ */
+export function renderOverview({insight, summary, overview, focusMode = 'auto', classOf = () => 'var(--scale-count-3)', provinces = [], unknownProvince = 0,
+  province = '', affCard = '', stations = [], learning = null, ctx = {}}) {
+  const unit = ctx.unit;
+  const count = insight.areas.length;
+  const w = words(insight.areas);
+  const aha = ahaBlock({insight, summary, overview, focusMode, unit, province});
   const narrowed = focusMode !== 'none' && count > 0 && summary.count !== overview.count;
   const metrics = `<section class="metrics" aria-label="${narrowed ? 'ตัวเลขของพื้นที่ที่โฟกัส' : 'ตัวเลขรวมของข้อมูลที่เลือก'}">
     ${studentsTile(summary.students, summary.count, `นักเรียน${narrowed ? ' ในโฟกัส' : ''}`)}
@@ -313,14 +340,7 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
     ${metricTile(summary.provinces, 'จังหวัด', 'province')}
   </section>`;
   const scopeText = province ? provinceName(province) : 'ประเทศไทย';
-  const provinceRows = p => `<li><button type="button" class="province-row" data-action="select-province" data-id="${esc(p.code)}" aria-label="${esc(p.name)} ${num(p.value)} ${esc(unit.one)} กดเพื่อดูจังหวัด"><i class="province-swatch" style="background:${esc(p.fill)}" aria-hidden="true"></i><span class="province-name">${esc(p.name)}</span><span class="province-count data-number">${num(p.value)}<small>${esc(unit.one)}</small></span></button></li>`;
-  const shown = provinces.slice(0, 8), rest = provinces.slice(8);
-  const unknown = unknownProvince ? `<p class="hint">ไม่ระบุจังหวัด ${nw(`${num(unknownProvince)} แห่ง`)}</p>` : '';
-  const provinceList = provinces.length > 1 ? `<section class="panel-section" aria-labelledby="province-title">
-    <div class="section-heading">${heading('province', `จังหวัดที่มี${unit.subject}มากที่สุด`, 'province-title')}<span class="hint">${num(provinces.length)} จังหวัด</span></div>
-    <ul class="province-list">${shown.map(provinceRows).join('')}</ul>
-    ${rest.length ? `<details class="more-provinces"><summary>อีก ${num(rest.length)} จังหวัด</summary><ul class="province-list">${rest.map(provinceRows).join('')}</ul></details>` : ''}
-    ${unknown}</section>` : '';
+  const provinceList = provinceListBlock(provinces, unit, unknownProvince);
   const rw = province ? areaWord(province) : 'เขต/อำเภอ';
   const ranking = areaRanking(overview.ranking, classOf, unit, {title: `${rw}ที่มี${unit.subject}มากที่สุด`, note: `${num(overview.ranking.filter(a => a.value > 0).length)} ${rw}`, showProvince: !province});
   const mix = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('segment', 'ประเภทสถานศึกษา')}<span class="hint">${esc(unit.one)}</span></div>${groupBars(overview.mix.byGroup, unit)}</section>` : '';
@@ -328,7 +348,8 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
   const sizes = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('students', 'ขนาด')}<span class="hint">แห่ง</span></div>${sizeBars(overview.sizes)}${feeLine(overview.fees)}</section>` : '';
   const affs = overview.affs.length && !affCard ? `<section class="panel-section"><div class="section-heading">${heading('aff', `สังกัดที่มี${unit.subject}มากที่สุด`)}<span class="hint"><button type="button" class="link-button" data-action="open-charts" data-value="affs">ดูทุกสังกัด</button></span></div>${affChips(overview.affs, unit)}</section>` : '';
   const rail = stationRanking(stations, unit, {title: `สถานีที่มี${unit.subject}รอบ ๆ มากที่สุด`});
-  return `${affCard}${aha}${metrics}${provinceList}${ranking}${rail}${mix}${levels}${sizes}${affs}${affCard ? '' : actionBar({kind: 'overview', province: province ? provinceName(province) : ''})}${provenance(ctx, scopeText, {rail: Boolean(rail || insight.rail?.focus?.within)})}`;
+  const learn = learning?.count ? learningTeaser(learning, scopeText) : '';
+  return `${affCard}${aha}${metrics}${provinceList}${ranking}${rail}${mix}${levels}${sizes}${affs}${learn}${affCard ? '' : actionBar({kind: 'overview', province: province ? provinceName(province) : ''})}${provenance(ctx, scopeText, {rail: Boolean(rail || insight.rail?.focus?.within), learn: Boolean(learn)})}`;
 }
 
 /* ---------- Empty selections (EVID-05) ---------- */
@@ -375,9 +396,10 @@ export function renderArea(p, classOf, ctx = {}) {
     <section class="panel-section"><div class="section-heading">${heading('students', 'ขนาด')}<span class="hint">แห่ง</span></div>${sizeBars(p.sizes)}${feeLine(p.fees)}</section>
     ${stationRanking(p.stations, unit, {title: 'สถานีใกล้สถานศึกษา'})}
     ${affs}
+    ${learningSection(p.learning, {place})}
     <section class="panel-section"><div class="section-heading">${heading('school', 'สถานศึกษา')}<span class="hint">เรียงตามนักเรียน</span></div>${schoolList(p.rows.slice(0, listLimit))}
       ${p.count > listLimit ? moreButton(p.count) : ''}</section>
-    ${provenance(ctx, boundary, {rail: Boolean(p.rail?.base)})}`;
+    ${provenance(ctx, boundary, {rail: Boolean(p.rail?.base), learn: Boolean(p.learning?.count)})}`;
 }
 
 /* ---------- Station (CityMETER · Transit) ---------- */
@@ -403,7 +425,8 @@ export function renderStation(p, ctx = {}) {
     <section class="panel-section"><div class="section-heading">${heading('level', 'ระดับชั้นที่เปิดสอน')}<span class="hint">แห่ง</span></div>${levelBars(p.levels)}</section>
     <section class="panel-section"><div class="section-heading">${heading('school', 'สถานศึกษา')}<span class="hint">เรียงตามนักเรียน</span></div>${schoolList(p.rows.slice(0, listLimit), {showArea: true, index: ctx.index, distance: p.distance})}
       ${p.count > listLimit ? moreButton(p.count) : ''}</section>
-    ${provenance(ctx, boundary, {rail: true})}`;
+    ${learningStationLine(p.learning)}
+    ${provenance(ctx, boundary, {rail: true, learn: Boolean(p.learning?.count)})}`;
 }
 
 /* ---------- Building (display-time spatial join) ---------- */
@@ -545,8 +568,9 @@ export function renderSchool(d, ctx = {}) {
     ${hasPoint(r) ? `<section class="panel-section terrain-section"><div class="section-heading">${heading('elevation', 'ภูมิประเทศ')}</div>
       <div class="fact-chips terrain-chips" data-terrain-for="${esc(r.id)}"><span class="hint">กำลังอ่านภูมิประเทศ</span></div></section>` : ''}
     ${compsetSection(d.compset, d.group?.th)}
+    ${learningSection(d.learning, {place: d.area ? `${w.area}${d.area.name}` : '', near: hasPoint(r)})}
     ${provenance(ctx, d.area ? `${w.area}${d.area.name} ${prov}` : prov || 'ไม่ระบุจังหวัด', {rail: Boolean(r.rail || r.railNext), terrain: hasPoint(r),
-      opec: Boolean(r.url || d.history), onesqa: Boolean(r.quality), fees: Boolean(r.fee)})}`;
+      opec: Boolean(r.url || d.history), onesqa: Boolean(r.quality), fees: Boolean(r.fee), learn: Boolean(d.learning?.count || d.learning?.nearCount)})}`;
 }
 
 /** Terrain chips (js/terrain.js#terrainChips) as fact chips; '' when nothing is known. */
@@ -565,5 +589,209 @@ export function renderFilterChips(values, labels) {
   if (values.size) push('size', labels.size[values.size] || values.size);
   if (values.province) push('province', labels.province[values.province] || values.province);
   if (values.aff) push('aff', labels.aff[values.aff] || values.aff);
+  if (values.service) push('service', `เรียนเสริม · ${labels.service?.[values.service] || values.service}`);
   return chips.length ? `<ul class="filter-chips" aria-label="ตัวกรองที่ใช้อยู่">${chips.join('')}<li><button type="button" class="filter-chip clear-all" data-action="clear-filter" data-id="all">ล้างทั้งหมด</button></li></ul>` : '';
+}
+
+/* ---------- Learning services (เรียนเสริม, 0.2.0; js/learning.js) ---------- */
+
+/** "กวดวิชา · ภาษา" for a record. */
+export const servicesText = r => (r?.serviceNames || []).join(' · ');
+
+/**
+ * Records per service as bars with the service pictogram (services overlap: a record with two services is in both,
+ * the heading's total counts it once). Each bar opens the learning measure filtered to that service.
+ */
+function serviceBars(services, {label = 'บริการเรียนเสริม (แห่ง)'} = {}) {
+  const list = services.filter(s => s.count > 0);
+  if (!list.length) return '';
+  const max = Math.max(1, ...list.map(s => s.count));
+  return `<ul class="mix-list service-list" aria-label="${esc(label)}">${list.map(s => `
+    <li><button type="button" class="mix-row" data-action="filter-service" data-value="${esc(s.id)}" title="ดูเฉพาะ${esc(s.th)}บนแผนที่"><span class="mix-label">${pic(SERVICE_PICTOGRAM[s.id] || 'learning', 'mix-pic')}${esc(s.th)}</span>
+      <span class="mix-track" aria-hidden="true"><span class="mix-fill category-${LEARNING_SERIES}" style="width:${Math.max(3, Math.round((s.count / max) * 100))}%"></span></span>
+      <span class="mix-value data-number">${num(s.count)}</span></button></li>`).join('')}</ul>`;
+}
+
+/** Learning records: ring cue + name, then services · where · distance. */
+export function learningList(rows, {distance = null, showArea = false, index = null} = {}) {
+  return `<ul class="outlet-list learning-list">${rows.map(r => {
+    const area = showArea && index && r.area ? index.byId.get(r.area) : null;
+    const d = distance?.get?.(r.id);
+    const meta = [servicesText(r), area ? placeName(area) : '', Number.isFinite(d) ? meters(d) : ''].filter(Boolean).join(' · ');
+    return `<li><button type="button" class="brand-row" data-action="select-school" data-id="${esc(r.id)}">${cueMarkup(r.series, {className: 'row-cue'})}<span class="row-text"><strong>${esc(r.name || r.nameEn || 'ไม่มีชื่อ')}</strong><span class="row-meta">${esc(meta)}</span></span></button></li>`;
+  }).join('')}</ul>`;
+}
+
+/**
+ * The learning context of a school, district or station view: the records the register lists in the district (by
+ * service) and, round a school's point, those with a published point within the radius (nearest first).
+ */
+function learningSection(lc, {place = '', near = false} = {}) {
+  if (!lc || (!lc.count && !lc.nearCount)) return '';
+  const nearList = near && lc.near.length
+    ? `<p class="fact-line">${pic('distance', 'fact-icon')}มีหมุดในระยะ ${esc(meters(lc.radius))} ${nw(`<strong class="data-number">${num(lc.nearCount)}</strong> แห่ง`)}</p>${learningList(lc.near.map(x => x.row), {distance: new Map(lc.near.map(x => [x.row.id, x.m]))})}`
+    : '';
+  const inArea = lc.count ? `<p class="fact-line">${pic('learning', 'fact-icon')}${place ? `ใน${esc(place)} ` : ''}${nw(`<strong class="data-number">${num(lc.count)}</strong> แห่ง`)}</p>${serviceBars(lc.services)}` : '';
+  return `<section class="panel-section learning-section"><div class="section-heading">${heading('learning', 'เรียนเสริม')}<span class="hint">ทะเบียน สช.</span></div>
+    ${inArea}${nearList}
+    <p class="links"><button type="button" class="link-button" data-action="set-metric" data-value="learning">ดูเรียนเสริมบนแผนที่</button></p></section>`;
+}
+
+/** Round a station: learning records with a published point within its radius. */
+function learningStationLine(l) {
+  if (!l?.count) return '';
+  return `<section class="panel-section learning-section"><div class="section-heading">${heading('learning', 'เรียนเสริม')}<span class="hint">มีหมุด · ≤ ${esc(meters(l.radius))}</span></div>
+    <p class="fact-line">${pic('learning', 'fact-icon')}${nw(`<strong class="data-number">${num(l.count)}</strong> แห่ง`)}</p>${serviceBars(l.services)}
+    <p class="links"><button type="button" class="link-button" data-action="set-metric" data-value="learning">ดูเรียนเสริมบนแผนที่</button></p></section>`;
+}
+
+/** The overview under a school measure: how many learning records the selection's place has, one tap to the map. */
+function learningTeaser(l, scopeText) {
+  return `<section class="panel-section learning-section"><div class="section-heading">${heading('learning', 'เรียนเสริม')}<span class="hint">ทะเบียน สช.</span></div>
+    <p class="fact-line">${pic('learning', 'fact-icon')}${esc(scopeText)} ${nw(`<strong class="data-number">${num(l.count)}</strong> แห่ง`)}</p>${serviceBars(l.services)}
+    <p class="links"><button type="button" class="btn quiet" data-action="set-metric" data-value="learning">ดูเรียนเสริมบนแผนที่</button></p></section>`;
+}
+
+/** Overview under the learning measure (same Aha contract as the schools: share of the province, rail, outside). */
+export function renderLearningOverview({insight, summary, overview, focusMode = 'auto', classOf = () => 'var(--scale-count-3)', provinces = [], unknownProvince = 0,
+  province = '', stations = [], ctx = {}}) {
+  const unit = ctx.unit;
+  const count = insight.areas.length;
+  const w = words(insight.areas);
+  const aha = ahaBlock({insight, summary, overview, focusMode, unit, province});
+  const narrowed = focusMode !== 'none' && count > 0 && summary.count !== overview.count;
+  const metrics = `<section class="metrics" aria-label="${narrowed ? 'ตัวเลขของพื้นที่ที่โฟกัส' : 'ตัวเลขรวมของข้อมูลที่เลือก'}">
+    ${metricTile(summary.count, `แห่ง${narrowed ? ' ในโฟกัส' : ''}`, 'learning')}
+    ${metricTile(summary.points, 'มีหมุด', 'maps', `${num(summary.points)} จาก ${num(summary.count)} แห่งมีพิกัดในเขต/อำเภอตามทะเบียน`)}
+    ${metricTile(summary.areas, narrowed ? w : 'เขต/อำเภอ', 'area')}
+    ${metricTile(summary.provinces, 'จังหวัด', 'province')}
+  </section>`;
+  const scopeText = province ? provinceName(province) : 'ประเทศไทย';
+  const rw = province ? areaWord(province) : 'เขต/อำเภอ';
+  const ranking = areaRanking(overview.ranking, classOf, unit, {title: `${rw}ที่มี${unit.subject}มากที่สุด`, note: `${num(overview.ranking.filter(a => a.value > 0).length)} ${rw}`, showProvince: !province});
+  const services = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('learning', 'บริการ')}<span class="hint">แห่ง</span></div>${serviceBars(overview.services)}</section>` : '';
+  const rail = stationRanking(stations, unit, {title: `สถานีที่มี${unit.subject}รอบ ๆ มากที่สุด`});
+  return `${aha}${metrics}${provinceListBlock(provinces, unit, unknownProvince)}${ranking}${services}${rail}${actionBar({kind: 'learning-overview', province: province ? provinceName(province) : ''})}${provenance(ctx, scopeText, {learnOnly: true, provider: overview.providers > 0, rail: Boolean(rail || insight.rail?.focus?.within)})}`;
+}
+
+/** A district under the learning measure. */
+export function renderLearningArea(p, classOf, ctx = {}) {
+  if (!p) return '';
+  const unit = ctx.unit, a = p.area, w = p.words;
+  const place = `${w.area}${a.name}`, prov = provinceName(a.province);
+  const rank = p.rank ? `<p class="rank-line">${pic('rank')}อันดับ ${num(p.rank)} จาก ${num(p.rankOf)} ทั่วประเทศ${p.rankProvince && p.rankProvinceOf > 1 ? ` · ${num(p.rankProvince)} จาก ${num(p.rankProvinceOf)} ใน${esc(prov)}` : ''}</p>` : '';
+  const share = p.count && p.provinceValue ? pct(p.value, p.provinceValue) : '—';
+  const shareDetail = p.count && p.provinceValue ? `${num(p.value)} จาก ${num(p.provinceValue)} แห่งของ${prov}` : '';
+  const listLimit = 30;
+  const head = `<section class="detail-head">
+      <button type="button" class="btn quiet back" data-action="back">กลับ</button>
+      <p class="eyebrow">${esc(w.area)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(a.province)}">${esc(prov)}</button></p>
+      <h2>${esc(place)}</h2>${a.nameEn ? `<p class="subtle">${esc(a.nameEn)}</p>` : ''}
+      ${rank}
+      <div class="metrics compact">${metricTile(p.count, 'แห่ง', 'learning')}${metricTile(p.points, 'มีหมุด', 'maps', `${num(p.points)} จาก ${num(p.count)} แห่งมีพิกัดในเขต/อำเภอนี้ตามทะเบียน`)}${metricTile(share, `ของ${prov}`, 'province', shareDetail)}${metricTile(p.rail?.base ? pct(p.rail.within, p.rail.base) : '—', 'ใกล้รถไฟฟ้า', 'rail', p.rail?.base ? railDetail(p.rail, unit) : '')}</div>
+      ${p.coverageState === 'measured_zero' ? `<div class="empty-note" role="note"><strong>ไม่พบสถานที่เรียนเสริมใน${esc(place)}${ctx.filtered ? 'ตามตัวกรองนี้' : ''}</strong>${p.scopeCount ? `<span>พบในพื้นที่อื่น <strong class="data-number">${num(p.scopeCount)}</strong> แห่ง</span><button type="button" class="btn quiet" data-action="leave-area">ดูพื้นที่ที่พบ</button>` : ''}</div>` : ''}
+      ${actionBar({kind: 'learning-area', area: {place, province: prov}})}
+      <div class="detail-actions">${p.count ? '<button type="button" class="btn" data-action="open-table">ดูรายชื่อ</button><button type="button" class="btn quiet" data-action="open-charts">เปรียบเทียบพื้นที่</button>' : ''}<button type="button" class="btn quiet" data-action="set-metric" data-value="students">ดูนักเรียนในเขตนี้</button></div>
+    </section>
+`;
+  const boundary = `${place} ${prov}`;
+  if (!p.count) return `${head}${provenance(ctx, boundary, {learnOnly: true})}`;
+  return `${head}    <section class="panel-section"><div class="section-heading">${heading('learning', 'บริการ')}<span class="hint">แห่ง</span></div>${serviceBars(p.services)}</section>
+    ${stationRanking(p.stations, unit, {title: 'สถานีใกล้สถานที่เรียนเสริม'})}
+    <section class="panel-section"><div class="section-heading">${heading('learning', 'สถานที่เรียนเสริม')}<span class="hint">ทะเบียน สช.</span></div>${learningList(p.rows.slice(0, listLimit))}
+      ${p.count > listLimit ? moreButton(p.count) : ''}</section>
+    ${provenance(ctx, boundary, {learnOnly: true, provider: p.rows.some(r => r.source === 'provider'), rail: Boolean(p.rail?.base)})}`;
+}
+
+/** A station under the learning measure: records with a published point within its radius. */
+export function renderLearningStation(p, ctx = {}) {
+  if (!p) return '';
+  const s = p.station;
+  const building = s.status !== 'operating';
+  const head = `<section class="detail-head station">
+      <button type="button" class="btn quiet back" data-action="back">กลับ</button>
+      <div class="identity">${pic('rail', 'identity-pic')}<div>
+        <p class="eyebrow">สถานีรถไฟฟ้า${s.lines?.length ? ` · ${esc(s.lines.join(' · '))}` : ''}${building ? ` · ${pic('construction')}กำลังสร้าง` : ''}</p>
+        <h2>สถานี${esc(s.name)}</h2>${s.nameEn ? `<p class="subtle">${esc(s.nameEn)}</p>` : ''}</div></div>
+      <div class="metrics compact">${metricTile(p.count, 'แห่ง', 'learning')}${metricTile(p.radius, 'ม. รอบสถานี', 'distance', `ระยะตรงจากจุดอ้างอิงของสถานี ${meters(p.radius)}`)}</div>
+      ${actionBar({kind: 'learning-station', station: s, point: {lat: s.lat, lon: s.lon, role: 'station'}})}
+      <div class="detail-actions">${link(stationLink(s), 'ดูใน CityMETER Transit', 'btn quiet source-link')}</div>
+    </section>
+`;
+  const boundary = `รัศมี ${meters(p.radius)} จากสถานี${s.name}`;
+  if (!p.count) return `${head}<div class="empty-note" role="note"><strong>ไม่พบสถานที่เรียนเสริมที่มีหมุดรอบสถานีนี้</strong></div>${provenance(ctx, boundary, {learnOnly: true, rail: true})}`;
+  return `${head}    <section class="panel-section"><div class="section-heading">${heading('learning', 'บริการ')}<span class="hint">แห่ง</span></div>${serviceBars(p.services)}</section>
+    <section class="panel-section"><div class="section-heading">${heading('learning', 'สถานที่เรียนเสริม')}<span class="hint">ใกล้ก่อน</span></div>${learningList(p.rows.slice(0, 40), {showArea: true, index: ctx.index, distance: p.distance})}
+      ${p.count > 40 ? moreButton(p.count) : ''}</section>
+    ${provenance(ctx, boundary, {learnOnly: true, rail: true})}`;
+}
+
+/** A drawn building with the learning records whose pins fall in its outline. */
+export function renderLearningBuilding(b, ctx = {}) {
+  if (!b) return '';
+  const w = b.words;
+  const area = b.area ? `${w.area}${b.area.name}` : '';
+  const source = BUILDING_SOURCE_TH[b.kind] || BUILDING_SOURCE_TH.osm;
+  const height = b.height != null ? `<span title="ความสูงจาก ${esc(source)}">สูงราว ${num(Math.round(b.height))} ม.</span>` : '';
+  const withPoint = b.rows.find(hasPoint);
+  return `<section class="detail-head building">
+      <button type="button" class="btn quiet back" data-action="back">กลับ</button>
+      <p class="eyebrow">${pic('building')} ${b.area ? `<button type="button" class="link-button" data-action="select-area" data-id="${esc(b.area.id)}">${esc(area)}</button>` : 'อาคาร'}${height ? ` · ${height}` : ''}</p>
+      <h2>สถานที่เรียนเสริมในอาคารนี้</h2>
+      <div class="metrics compact">${metricTile(b.count, 'แห่ง', 'learning')}</div>
+      ${actionBar({kind: 'building', rows: b.rows, area: b.area ? {place: area, province: provinceName(b.area.province)} : null,
+        point: withPoint ? {lat: withPoint.latitude, lon: withPoint.longitude, role: 'point'} : null})}
+    </section>
+    <section class="panel-section"><div class="section-heading">${heading('learning', 'บริการ')}<span class="hint">แห่ง</span></div>${serviceBars(b.services)}</section>
+    <section class="panel-section"><div class="section-heading">${heading('learning', 'สถานที่เรียนเสริม')}<span class="hint">${num(b.count)}</span></div>${learningList(b.rows.slice(0, 40), {showArea: b.areaCount > 1, index: ctx.index})}</section>
+    ${provenance(ctx, `หมุดในขอบอาคาร ${source}${area ? ` · ${area}` : ''}`, {learnOnly: true})}`;
+}
+
+/** One learning record: services, the register's type, its district and rail, the schools round it. */
+export function renderLearning(d, ctx = {}) {
+  if (!d) return '';
+  const r = d.row, w = d.words;
+  const prov = provinceName(r.province);
+  const coords = hasPoint(r) ? `${r.latitude.toFixed(6)}, ${r.longitude.toFixed(6)}` : '';
+  const serviceChips = r.services.map((id, i) => `<button type="button" class="fact-chip" data-action="filter-service" data-value="${esc(id)}" title="ดูเฉพาะ${esc(r.serviceNames[i])}บนแผนที่">${pic(SERVICE_PICTOGRAM[id] || 'learning')}${esc(r.serviceNames[i])}</button>`).join('');
+  const typeChip = r.type ? `<span class="fact-chip" title="ประเภทในทะเบียนโรงเรียนนอกระบบ สช.">${pic('segment')}สช. · ${esc(r.type)}</span>` : '';
+  const areaChip = d.area
+    ? `<button type="button" class="fact-chip" data-action="select-area" data-id="${esc(d.area.id)}">${pic('area')}${esc(w.area)}${esc(d.area.name)} · ${esc(prov)}</button>`
+    : r.province ? `<button type="button" class="fact-chip" data-action="select-province" data-id="${esc(r.province)}">${pic('province')}${esc(prov)}</button>` : '';
+  const railChip = r.rail ? `<button type="button" class="fact-chip" data-action="select-station" data-id="${esc(r.rail.station.id)}" title="สถานีที่เปิดแล้วที่ใกล้ที่สุด · ระยะตรง">${pic('rail')}${esc(stationShort(r.rail.station))} ${nw(esc(meters(r.rail.m)))}</button>` : '';
+  const bd = d.building;
+  const buildingChip = bd?.others ? `<button type="button" class="fact-chip" data-action="select-building" data-id="${esc(bd.key)}" title="หมุดของสถานที่เรียนเสริมอีก ${num(bd.others)} แห่งอยู่ในอาคารนี้บนแผนที่">${pic('building')}อีก ${num(bd.others)} แห่งในอาคารนี้</button>` : '';
+  const point = coords ? `<span class="data-number">${esc(coords)}</span><br><span class="hint">จุดทะเบียน สช. (OPEC)</span>` : `<span>${esc(POINT_TH[r.pointState] || POINT_TH.none)}</span>`;
+  const sameArea = d.sameArea.count ? `<section class="panel-section"><div class="section-heading">${heading('learning', `เรียนเสริมอื่นใน${d.area ? `${w.area}${d.area.name}` : 'พื้นที่นี้'}`)}<span class="hint">${num(d.sameArea.count)} แห่ง</span></div>${serviceBars(d.sameArea.services)}</section>` : '';
+  const schools = d.schools.count
+    ? `<section class="panel-section"><div class="section-heading">${heading('school', 'โรงเรียนรอบ ๆ')}<span class="hint" title="ระยะตรงจากหมุด">${pic('distance', 'hint-pic')}≤ ${esc(meters(d.schools.radius))}</span></div>
+      <p class="fact-line">${pic('students', 'fact-icon')}${nw(`<strong class="data-number">${num(d.schools.count)}</strong> แห่ง`)} · ${nw(`${num(d.schools.students)} คน`)}</p>
+      ${schoolList(d.schools.rows.map(x => x.row), {distance: new Map(d.schools.rows.map(x => [x.row.id, x.m]))})}</section>`
+    : d.schoolsInArea.count ? `<section class="panel-section"><div class="section-heading">${heading('school', `โรงเรียนใน${d.area ? `${w.area}${d.area.name}` : 'พื้นที่นี้'}`)}</div>
+      <p class="fact-line">${pic('students', 'fact-icon')}${nw(`<strong class="data-number">${num(d.schoolsInArea.count)}</strong> แห่ง`)} · ${nw(`${num(d.schoolsInArea.students)} คน`)}</p></section>` : '';
+  return `<section class="detail-head store">
+      <button type="button" class="btn quiet back" data-action="back">กลับ</button>
+      <div class="identity"><span class="identity-cue">${cueMarkup(r.series)}</span><div>
+        <p class="eyebrow eyebrow-cue">เรียนเสริม${r.serviceNames.length ? ` · ${esc(servicesText(r))}` : ''}</p>
+        <h2>${esc(r.name || r.nameEn || 'ไม่มีชื่อ')}</h2>
+        ${subLine(r, 'branch-name', 'p')}</div></div>
+      <div class="fact-chips">${serviceChips}${typeChip}${areaChip}${railChip}${buildingChip}${coords ? '' : '<span class="fact-chip is-quiet">ไม่มีหมุด</span>'}</div>
+      ${actionBar({kind: 'learning', row: r, area: d.area ? {place: `${w.area}${d.area.name}`, province: prov} : r.province ? {place: '', province: prov} : null,
+        point: hasPoint(r) ? {lat: r.latitude, lon: r.longitude, role: 'point'} : null})}
+      <details class="source-details"><summary>ที่มาและพิกัด</summary>
+        <dl class="facts">
+          <dt>แหล่ง</dt><dd>${r.source === 'provider' ? 'ผู้ให้บริการ' : 'ทะเบียนโรงเรียนนอกระบบ สช. (OPEC)'}${r.url ? ` · ${link(r.url, r.source === 'provider' ? 'หน้าของผู้ให้บริการ' : 'หน้าทะเบียน สช.')}` : ''}</dd>
+          <dt>จัดหมวด</dt><dd>${esc(r.evidence || '')}</dd>
+          <dt>พื้นที่</dt><dd>ตามทะเบียน</dd>
+          <dt>พิกัด</dt><dd>${point}</dd>
+          <dt>รหัส</dt><dd><span class="hint data-number">${esc(r.id)}</span></dd>
+        </dl>
+      </details>
+    </section>
+    ${sameArea}
+    ${hasPoint(r) ? `<section class="panel-section terrain-section"><div class="section-heading">${heading('elevation', 'ภูมิประเทศ')}</div>
+      <div class="fact-chips terrain-chips" data-terrain-for="${esc(r.id)}"><span class="hint">กำลังอ่านภูมิประเทศ</span></div></section>` : ''}
+    ${schools}
+    ${provenance(ctx, d.area ? `${w.area}${d.area.name} ${prov}` : prov || 'ไม่ระบุจังหวัด', {learn: true, learnOnly: !(d.schools.count || d.schoolsInArea.count),
+      provider: r.source === 'provider', rail: Boolean(r.rail), terrain: hasPoint(r)})}`;
 }

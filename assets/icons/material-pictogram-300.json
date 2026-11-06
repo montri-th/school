@@ -1,8 +1,8 @@
 {
   "family": "LDS Material Symbols Rounded Pictogram",
   "file": "material-pictogram-300.woff2",
-  "bytes": 4264,
-  "sha256": "5e61486060c8ae981d800bc610149d5edf523e0318dfe20acc61f08b6edcddc5",
+  "bytes": 4892,
+  "sha256": "0c18b9ac3583748ff54cc3f5370edf47b3c0331b92629a26d3a2748cc65ea060",
   "source": "google/material-design-icons variablefont/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf",
   "sourceSha256": "7e74e36533ccee12c2b81e75bfcf3ccf123d3bb7e7e46d65d94445f23db0c97c",
   "license": "Apache-2.0 (assets/icons/material-symbols-Apache-2.0.txt)",
@@ -128,7 +128,27 @@
     "dataset": {
       "name": "database",
       "codepoint": "U+F20E"
+    },
+    "learning": {
+      "name": "auto_stories",
+      "codepoint": "U+E666"
+    },
+    "tutor": {
+      "name": "edit_note",
+      "codepoint": "U+E745"
+    },
+    "language": {
+      "name": "translate",
+      "codepoint": "U+E8E2"
+    },
+    "arts": {
+      "name": "palette",
+      "codepoint": "U+E40A"
+    },
+    "child": {
+      "name": "child_care",
+      "codepoint": "U+EB41"
     }
   },
-  "status": "test exception to LDS nav-7 (owner 2026-10-22; actions and building added 2026-10-29; terrain glyphs 2026-11-01 for the map labels; rank, date, distance, construction and dataset 2026-11-01 for short copy; school glyphs 2026-11-05); nav-7 subset unchanged"
+  "status": "test exception to LDS nav-7 (owner 2026-10-22; actions and building added 2026-10-29; terrain glyphs 2026-11-01 for the map labels; rank, date, distance, construction and dataset 2026-11-01 for short copy; school glyphs 2026-11-05; learning glyphs 2026-11-06); nav-7 subset unchanged"
 }

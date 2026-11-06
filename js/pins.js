@@ -15,10 +15,18 @@
  * buttons: keyboard-reachable (roving tabindex, arrow keys); co-located rows get bounded screen-space slots around
  * their own anchor (the point never moves; a leader line joins a hovered/selected pin to it). The accessible name is
  * the school name and its recorded students.
+ *
+ * A learning-service record (0.2.0, js/learning.js) is one more row with a point: LDS series 8 (ring), filled at the
+ * 200-student size (it records no learners; sizeValue), its accessible name “name · เรียนเสริม · services”. Under the
+ * learning measure only learning rows are drawn, under the school measures only school rows.
  */
 import {hasPoint, pinSizeOf, pinRadius, pinSizeExpression} from './model.js';
+import {isLearning, LEARNING_PIN_SIZE} from './learning.js';
 import {cueImage, cueMarkup} from './cues.js';
 import {GEOJSON_MAXZOOM} from './map-layers.js';
+
+/** The size input of a symbol: recorded students (0 = unknown → hollow), or the fixed, filled size of a learning record. */
+export const sizeValue = r => (isLearning(r) ? LEARNING_PIN_SIZE : Number.isFinite(r?.students) && r.students > 0 ? r.students : 0);
 
 export const DETAIL_MIN_ZOOM = 15.5;
 /** Largest quiet context dot (px of radius): context stays quiet at every zoom. */
@@ -67,7 +75,7 @@ export function pointCollection(rows) {
   for (const r of rows) {
     if (!hasPoint(r)) continue;
     features.push({type: 'Feature', geometry: {type: 'Point', coordinates: [r.longitude, r.latitude]},
-      properties: {k: r.id, s: r.series, z: pinSizeOf(r.students), r: Number.isFinite(r.students) && r.students > 0 ? r.students : 0}});
+      properties: {k: r.id, s: r.series, z: pinSizeOf(sizeValue(r)), r: sizeValue(r)}});
   }
   return {type: 'FeatureCollection', features};
 }
@@ -241,7 +249,7 @@ export function installBranchPins(map, container, {onSelect, onLayout, onHover, 
       button.style.left = `${p.x}px`;
       button.style.top = `${p.y}px`;
       // The HTML pin keeps the students size of its symbol (bounded so a co-located slot never overlaps its neighbour).
-      const own = Math.max(8, Math.min(40, 2 * pinRadius(p.entry.row.students, zoom)));
+      const own = Math.max(8, Math.min(40, 2 * pinRadius(sizeValue(p.entry.row), zoom)));
       button.style.setProperty('--pin-size', `${p.spacing > 1 && p.spacing < own ? Math.max(6, p.spacing) : own}px`);
       button.tabIndex = p.id === activeId ? 0 : -1;
       button.dataset.displaced = String(Math.hypot(p.x - p.anchorX, p.y - p.anchorY) > 2);
@@ -270,9 +278,11 @@ export function installBranchPins(map, container, {onSelect, onLayout, onHover, 
     button.className = 'store-pin';
     button.dataset.storeId = row.id;
     button.dataset.category = String(row.series);
-    button.dataset.size = String(pinSizeOf(row.students));
-    if (!(Number.isFinite(row.students) && row.students > 0)) button.classList.add('is-unknown-students');
-    const text = `${row.name || row.nameEn || ''} · ${row.students ? `${row.students.toLocaleString('th-TH')} คน` : 'ไม่ทราบจำนวนนักเรียน'}`;
+    button.dataset.size = String(pinSizeOf(sizeValue(row)));
+    if (!sizeValue(row)) button.classList.add('is-unknown-students');
+    const text = isLearning(row)
+      ? `${row.name || row.nameEn || ''} · เรียนเสริม · ${(row.serviceNames || []).join(' · ')}`
+      : `${row.name || row.nameEn || ''} · ${row.students ? `${row.students.toLocaleString('th-TH')} คน` : 'ไม่ทราบจำนวนนักเรียน'}`;
     button.setAttribute('aria-label', text);
     button.title = text;
     dot.className = 'pin-dot';

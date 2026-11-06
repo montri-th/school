@@ -3,8 +3,8 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-brief",
   "productId": "citymeter-school",
-  "productVersion": "0.1.0",
-  "updatedOn": "2026-11-05",
+  "productVersion": "0.2.0",
+  "updatedOn": "2026-11-06",
   "datasetCheckedOn": "2026-10-31",
   "language": "th",
   "productName": "CityMETER · School",
@@ -20,10 +20,11 @@
   ],
   "journey": [
     "first Aha (3D city scene, students)",
-    "switch the measure (นักเรียน | สถานศึกษา)",
+    "switch the measure (นักเรียน | สถานศึกษา | เรียนเสริม)",
     "district → groups, levels, sizes, stations, affiliations, schools",
     "station → schools within 500 m",
-    "school → building view, tuition, history, assessment, comparison set",
+    "school → building view, tuition, history, assessment, comparison set, learning services of its district and within 1 km",
+    "เรียนเสริม (0.2.0) → districts by service, a record → the schools within 1 km",
     "affiliation filter → its card",
     "charts and table",
     "open the same area in CityMETER production"
@@ -32,11 +33,12 @@
   "rowScopes": {
     "scopeRows": "rows after search · group · level · size · province · affiliation, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
     "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
-    "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table"
+    "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table",
+    "learning": "under the learning measure the three scopes hold the learning rows of data/learning.json (search · province · service), never school rows; the key of a scope carries its universe (L | S)"
   },
   "firstAha": {
     "scope": "scopeRows",
-    "measure": "students (default) | count",
+    "measure": "students (default) | count | learning",
     "ranking": "เขต/อำเภอ by the measure (then the other measure, then name) inside the home province = the province holding the most of the measure among rows placed at district level; up to three and never every district holding the measure (N ≤ 3 → top N − 1); never cut through a tie; none left → spread",
     "headlineTemplate": "{share}% ของ{นักเรียน|สถานศึกษา}{home} อยู่ใน {n} {เขต|อำเภอ}นี้ (one district: อยู่ใน{เขต|อำเภอ}{name})",
     "numerator": "Σ measure of the focused districts (matched membership)",
@@ -119,7 +121,49 @@
           "value": 212
         }
       },
-      "note": "regression fixtures (tests/insight.test.js), never UI constants"
+      "learning": {
+        "home": "BKK",
+        "areas": [
+          {
+            "id": "1007",
+            "name": "ปทุมวัน",
+            "value": 94
+          },
+          {
+            "id": "1033",
+            "name": "คลองเตย",
+            "value": 57
+          },
+          {
+            "id": "1032",
+            "name": "ประเวศ",
+            "value": 56
+          }
+        ],
+        "value": 207,
+        "homeValue": 960,
+        "sharePct": 22,
+        "rail": {
+          "m": 500,
+          "focus": {
+            "within": 39,
+            "base": 57
+          },
+          "rest": {
+            "within": 88,
+            "base": 262
+          },
+          "base": "records with a published point"
+        },
+        "outside": {
+          "id": "5001",
+          "name": "เมืองเชียงใหม่",
+          "province": "CMI",
+          "value": 95
+        },
+        "builtOn": "2026-11-06"
+      },
+      "note": "regression fixtures (tests/insight.test.js, tests/learning.test.js), never UI constants"
     },
     "fallbacks": {
       "spread": "every district of the home province holds the same value → spread finding, the camera frames them",
@@ -130,17 +174,19 @@
   "countingUnitContract": {
     "default": "students recorded (Σ student_count, คน)",
     "alternatives": [
-      "records (แห่ง)"
+      "records (แห่ง)",
+      "learning-service records (เรียนเสริม · แห่ง) — the rows of data/learning.json, counted apart from the schools (0.2.0)"
     ],
     "words": {
       "students": "คน",
-      "count": "แห่ง"
+      "count": "แห่ง",
+      "learning": "แห่ง"
     },
     "rule": "one row = one CityMETER school UUID of the 2026 baseline (roster record, not field-verified); unknown students counted apart, never 0",
-    "switch": "legend radio group, URL ?metric=count"
+    "switch": "legend radio group, URL ?metric=count | ?metric=learning"
   },
   "metricContract": {
-    "areas": "Σ measure per เขต/อำเภอ (students → LI li.supply; records → LDS count)",
+    "areas": "Σ measure per เขต/อำเภอ (students → LI li.supply; records and learning records → LDS count)",
     "provinces": "Σ measure per province frame (same family)",
     "eligibility": "none — totals; ties are never cut (firstAha.ranking)",
     "combined": "Σ focus ÷ the home province’s whole total in the selection (homeValue; a share, numerator and denominator shown)",
@@ -194,6 +240,7 @@
         "th": "สถานศึกษารัฐอื่น"
       }
     },
+    "learningSeries": {"series": 8, "th": "เรียนเสริม", "shape": "ring", "size": "filled at the 200-student size (no learner count)"},
     "noStar": true,
     "sizeCue": "symbol area ∝ recorded students (radius = k(zoom)·√(students/400), cap 4,000, min 1.6 px; js/model.js#pinRadius); unknown students = open outline at the 200-student size; colour stays the group’s; quiet context ≤ 6 px radius"
   },
@@ -356,7 +403,7 @@
   },
   "pictogramContract": {
     "file": "assets/icons/material-pictogram-300.woff2",
-    "sha256": "5e61486060c8ae981d800bc610149d5edf523e0318dfe20acc61f08b6edcddc5",
+    "sha256": "0c18b9ac3583748ff54cc3f5370edf47b3c0331b92629a26d3a2748cc65ea060",
     "glyphs": [
       "area",
       "province",
@@ -386,7 +433,12 @@
       "date",
       "distance",
       "construction",
-      "dataset"
+      "dataset",
+      "learning",
+      "tutor",
+      "language",
+      "arts",
+      "child"
     ],
     "rule": "decorative (aria-hidden); the text carries the meaning; no star"
   },
@@ -396,7 +448,8 @@
       "area",
       "station",
       "building",
-      "school"
+      "school",
+      "learning measure: overview · area · station · building · record (js/panel.js#renderLearning*)"
     ],
     "actions": [
       "select-area",
@@ -414,7 +467,8 @@
       "open-charts",
       "open-table",
       "clear-filter",
-      "leave-area"
+      "leave-area",
+      "filter-service"
     ],
     "models": {
       "overview": "js/profile-model.js#buildOverview",
@@ -422,9 +476,10 @@
       "station": "buildStationProfile",
       "building": "buildBuildingProfile",
       "school": "buildSchoolDetail (+ compsetOf, historyOf)",
-      "aff": "buildAffProfile"
+      "aff": "buildAffProfile",
+      "learning": "buildLearningOverview · buildLearningArea · buildLearningStation · buildLearningBuilding · buildLearningDetail; learning context in buildAreaProfile, buildStationProfile and buildSchoolDetail (js/learning.js#learningContext)"
     },
-    "provenance": "exactly one line per view: dataset · source (+ สช. / สมศ. / fee announcements / Transit / terrain when shown) · date · boundary, then “วิธีนับ”",
+    "provenance": "exactly one line per view: dataset · source (+ สช. / สมศ. / fee announcements / the สช. nonformal register for learning services / Transit / terrain when shown) · date · boundary, then “วิธีนับ”",
     "phoneSheet": "56dvh bottom sheet (0.3.5; was 64dvh), sticky close; in the school, building, station and area modes the dataset heading is visually hidden (kept for screen readers) and the search form is off — the filter chips school"
   },
   "data": {
@@ -481,7 +536,62 @@
     "affiliations": 16,
     "groups": 8,
     "method": "DATA_METHOD.md",
-    "build": "scripts/build-data.py"
+    "build": "scripts/build-data.py",
+    "learning": {
+      "file": "data/learning.json",
+      "report": "data/learning-report.json",
+      "rows": 3495,
+      "counts": {
+        "rows": 3495,
+        "opec": 3494,
+        "provider": 1,
+        "points": 680,
+        "service.arts": 553,
+        "service.child": 8,
+        "service.language": 1287,
+        "service.tutor": 1880,
+        "provinces": 76,
+        "districts": 350,
+        "register.codes": 8227,
+        "register.inScope": 3494,
+        "register.pending": 277,
+        "register.outOfScope": 4456
+      },
+      "checks": {
+        "overlap.schoolCodes": 0,
+        "point.none": 2588,
+        "point.otherDistrict": 158,
+        "point.otherProvince": 64,
+        "point.pin": 680,
+        "point.unusable": 5
+      },
+      "tabs": {
+        "27_LEARNING_SERVICES": "be998290ab7e7a6b0e6cc20234f66410de0bdf37d085a8e56f3c23bb2efa25ac",
+        "28_OPEC_NONFORMAL": "8f02a3a1f12e8e8526e00a85e8584a16ea23968dcd7b02e0afc0fbaf86884130",
+        "29_LEARNING_LINKS": "670bedd796307d732ba1471023cb4470f3086f472395bcd1bf9d6ecde89f9edb"
+      },
+      "checkedOn": "2026-10-31",
+      "providerCheckedOn": "2026-11-06",
+      "readOn": "2026-11-06",
+      "builtOn": "2026-11-06",
+      "build": "scripts/build-learning.py",
+      "method": "DATA_METHOD.md §14"
+    }
+  },
+  "learningContract": {
+    "owner": "2026-11-06: “เพิ่ม … 27_LEARNING_SERVICES และข้อมูลที่อัพเดทเพิ่มมาในชีทด้วย” — the district level + the third measure + checked pins",
+    "file": "data/learning.json (columnar; js/learning.js#decodeLearning) from tabs 27–29 of the same research master",
+    "row": "one record of 27_LEARNING_SERVICES: an OPEC nonformal-school code classed เข้าเกณฑ์เบื้องต้น, or a provider-confirmed service point — a licence record of the register, not a field-verified count of places that teach today; one place may hold several codes",
+    "services": "กวดวิชา · ภาษา · ศิลปะ · พัฒนาการเด็ก (bitmask); a total counts a record once, a service bar counts it in each of its services",
+    "membership": "the register's DOPA district code (the provider record by its district name), checked against data/area-index.json at build time",
+    "pins": "only where the OPEC registry point lies inside the district the register lists (data/frames, build time); every other record counts without a pin (point states none · otherDistrict · otherProvince · unusable)",
+    "measure": "metric learning (แห่ง, LDS count, 41 samples); the map, legend, labels, Aha, ranks, charts and table read the learning rows only",
+    "filters": "search · province · service (the school filters hide and are cleared under this measure)",
+    "schoolViews": "district: the district's learning records by service; station: pinned records within 500 m; school: pinned records within 1 km nearest first (js/learning.js#learningContext)",
+    "learningViews": "record: services, OPEC type, district, nearest operating station, building, the other learning records of its district, terrain, the schools with a pin within 1 km nearest first (else the district's schools) with their recorded students, the OPEC public profile page; overview, district, station and building views under the learning measure by service",
+    "navigation": "a row of the other universe opens through js/app.js#openRow, which switches the measure and keeps the step in the back stack with its measure",
+    "deepLinks": "?metric=learning · ?service=tutor|language|arts|child · ?learn=<id>",
+    "never": "added to school totals; called a school, a seat, a learner count or a market; “ยังเปิดสอน”; an OPEC code as a field; an address"
   },
   "visualSystem": {
     "lds": "Landometer-Design-System-v0.9.7.md (standalone-0.9.7-r1, v0.9.7-owner.1, color-srgb-10, sha256 d3085cbc…96)",
@@ -534,13 +644,17 @@
     {
       "id": "S11",
       "rule": "levels only from grade codes; “ไม่ทราบระดับชั้น” is its own filter value and bar"
+    },
+    {
+      "id": "S12",
+      "rule": "learning-service records are their own rows: never added to the school totals or mixed into the school rows; a pin only where the registry point lies inside the district the register lists (build time); no OPEC code field, address, learner count or course price"
     }
   ],
   "chartContracts": [
     {
       "viewKey": "areas",
       "title": "เขต/อำเภอ",
-      "question": "เขต/อำเภอไหนมีนักเรียน (หรือสถานศึกษา) มากที่สุด",
+      "question": "เขต/อำเภอไหนมีนักเรียน (หรือสถานศึกษา หรือสถานที่เรียนเสริม) มากที่สุด",
       "encoding": "bars in the map’s ramp colour, top 20 of every ranked district",
       "metric": "the current measure",
       "scope": "scopeRows"
@@ -549,7 +663,7 @@
       "viewKey": "mix",
       "title": "ประเภทสถานศึกษา",
       "question": "แต่ละเขต/อำเภอเป็นสถานศึกษาประเภทใด",
-      "encoding": "top 12 districts × 8 groups, equal cells, own 41-sample ramp, measured zero outlined, unknown students a dash",
+      "encoding": "top 12 districts × 8 groups (under the learning measure × 4 services, a record in each of its services), equal cells, own 41-sample ramp, measured zero outlined, unknown students a dash",
       "metric": "the current measure",
       "scope": "scopeRows"
     },
@@ -557,7 +671,7 @@
       "viewKey": "affs",
       "title": "สังกัด",
       "question": "สังกัดไหนมีนักเรียน (หรือสถานศึกษา) มากที่สุด",
-      "encoding": "bars in one neutral foundation fill, records and full name in the label",
+      "encoding": "bars in one neutral foundation fill, records and full name in the label; under the learning measure the services (series 8), a bar opens the service filter",
       "metric": "the current measure",
       "scope": "scopeRows"
     }
@@ -566,6 +680,6 @@
     "site": "GitHub Pages from main /root",
     "handoff": "dist/CityMETER-School-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
     "liveCheck": "npm run verify:live",
-    "cacheTag": "?v=20261105-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+    "cacheTag": "?v=20261106-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
   }
 }

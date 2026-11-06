@@ -12,6 +12,7 @@
  */
 import {mixOf, sizeMixOf, levelMixOf, hasPoint, valueOf, rowValue, railShare} from './model.js';
 import {summarizeAreas, byMetric, levelWords} from './areas.js';
+import {serviceMixOf, learningOrder, learningContext, nearPoint, LEARNING_NEAR_M} from './learning.js';
 
 const COLLATOR = new Intl.Collator('th');
 /** Lists: most students first (unknown students last), then name — the recorded size is the order users scan by. */
@@ -85,7 +86,7 @@ export function stationsOf(rows, metric = 'students', m = 500, limit = 6) {
   return [...by.values()].sort((a, b) => b.value - a.value || COLLATOR.compare(a.station.name, b.station.name)).slice(0, limit);
 }
 
-export function buildAreaProfile(scopeRows, areaId, index, groups, {metric = 'students'} = {}) {
+export function buildAreaProfile(scopeRows, areaId, index, groups, {metric = 'students', learning = null} = {}) {
   const area = index.byId.get(areaId);
   if (!area) return null;
   const ranking = rankAreas(scopeRows, index, {metric});
@@ -105,6 +106,7 @@ export function buildAreaProfile(scopeRows, areaId, index, groups, {metric = 'st
     points: mine.filter(hasPoint).length, ...mixOf(mine, groups), sizes: sizeMixOf(mine), levels: levelMixOf(mine), affs: affsIn(mine, 12, metric),
     fees: feesOf(mine), rail: railShare(mine, metric), stations: stationsOf(mine, metric),
     rows: [...mine].sort(listOrder),
+    learning: learning ? learningContext(learning.rows, {area: areaId, services: learning.services}) : null,
   };
 }
 
@@ -174,13 +176,14 @@ export function historyOf(row, periods = []) {
 }
 
 /** School detail: the comparison set, the other schools of its affiliation in its district, and its rail context. */
-export function buildSchoolDetail(row, {scopeRows, allRows, index, groups, periods = [], building = null}) {
+export function buildSchoolDetail(row, {scopeRows, allRows, index, groups, periods = [], building = null, learning = null}) {
   if (!row) return null;
   const area = row.area ? index.byId.get(row.area) || null : null;
   const sameArea = row.area ? scopeRows.filter(r => r.area === row.area && r.id !== row.id) : [];
   return {row, area, words: levelWords(row.province), group: groups[row.group], building,
     compset: compsetOf(row, allRows), history: historyOf(row, periods),
-    sameArea: {count: sameArea.length, students: sum(sameArea, 'students')}};
+    sameArea: {count: sameArea.length, students: sum(sameArea, 'students')},
+    learning: learning ? learningContext(learning.rows, {area: row.area, lat: row.latitude, lon: row.longitude, services: learning.services}) : null};
 }
 
 export const STATION_RADIUS_M = 500;
@@ -189,7 +192,7 @@ export const STATION_RADIUS_M = 500;
  * A rail station of CityMETER · Transit and the records whose points lie within STATION_RADIUS_M of its reference
  * point (straight line; a record near two stations is listed at both — this view never adds stations together).
  */
-export function buildStationProfile(station, {scopeRows, groups, radius = STATION_RADIUS_M, metric = 'students'}) {
+export function buildStationProfile(station, {scopeRows, groups, radius = STATION_RADIUS_M, metric = 'students', learning = null}) {
   if (!station) return null;
   const rows = [];
   const dLat = radius / 110574, dLon = radius / (111320 * Math.cos((station.lat * Math.PI) / 180));
@@ -202,5 +205,67 @@ export function buildStationProfile(station, {scopeRows, groups, radius = STATIO
   const list = rows.map(x => x.row);
   return {station, radius, metric, count: list.length, students: sum(list, 'students'), studentsUnknown: list.filter(r => !r.students).length,
     value: sum(list, metric), ...mixOf(list, groups), sizes: sizeMixOf(list), levels: levelMixOf(list), affs: affsIn(list, 8, metric), rows: list,
-    distance: new Map(rows.map(x => [x.row.id, x.m]))};
+    distance: new Map(rows.map(x => [x.row.id, x.m])),
+    learning: learning ? (() => { const near = nearPoint(learning.rows, station.lat, station.lon, radius); return {radius, count: near.length, services: serviceMixOf(near.map(x => x.row), learning.services)}; })() : null};
+}
+
+/* ---------- learning-service records (measure `learning`, data/learning.json) ---------- */
+
+/** Overview under the learning measure: districts ranked by records, records per service, points and rail. */
+export function buildLearningOverview(scopeRows, index, {province = '', services = []} = {}) {
+  return {ranking: rankAreas(scopeRows, index, {province, metric: 'learning'}), services: serviceMixOf(scopeRows, services), count: scopeRows.length,
+    points: scopeRows.filter(hasPoint).length, unplaced: unplacedOf(scopeRows), rail: railShare(scopeRows, 'learning'),
+    providers: scopeRows.filter(r => r.source === 'provider').length};
+}
+
+/** A district under the learning measure: its records by service, its rank and share of the province, nearest stations. */
+export function buildLearningArea(scopeRows, areaId, index, services = []) {
+  const area = index.byId.get(areaId);
+  if (!area) return null;
+  const ranking = rankAreas(scopeRows, index, {metric: 'learning'});
+  const inProvince = ranking.filter(a => a.province === area.province);
+  const mine = scopeRows.filter(r => r.area === areaId);
+  const provinceCount = scopeRows.filter(r => r.province === area.province).length;
+  const pos = ranking.findIndex(a => a.id === areaId), posProvince = inProvince.findIndex(a => a.id === areaId);
+  return {area, words: levelWords(area.province), metric: 'learning', value: mine.length, count: mine.length, coverageState: selectionState(mine.length),
+    scopeCount: scopeRows.length, km2: area.km2,
+    rank: pos >= 0 && mine.length ? pos + 1 : null, rankOf: ranking.filter(a => a.value > 0).length,
+    rankProvince: posProvince >= 0 && mine.length ? posProvince + 1 : null, rankProvinceOf: inProvince.filter(a => a.value > 0).length,
+    provinceValue: provinceCount, share: provinceCount ? (mine.length / provinceCount) * 100 : null,
+    points: mine.filter(hasPoint).length, services: serviceMixOf(mine, services), rail: railShare(mine, 'learning'), stations: stationsOf(mine, 'learning'),
+    rows: [...mine].sort(learningOrder)};
+}
+
+/** A station under the learning measure: records with a published point within the radius (straight line). */
+export function buildLearningStation(station, {scopeRows, services = [], radius = STATION_RADIUS_M}) {
+  if (!station) return null;
+  const near = nearPoint(scopeRows, station.lat, station.lon, radius);
+  const rows = near.map(x => x.row);
+  return {station, radius, metric: 'learning', count: rows.length, value: rows.length, services: serviceMixOf(rows, services), rows,
+    distance: new Map(near.map(x => [x.row.id, x.m]))};
+}
+
+/** A drawn building with the learning records whose points fall inside it (display only). */
+export function buildLearningBuilding(sel, index, services = []) {
+  if (!sel?.rows?.length) return null;
+  const rows = [...sel.rows].sort(learningOrder);
+  const area = index.byId.get(rows[0].area) || null;
+  return {key: sel.key, kind: sel.kind || 'osm', rows, count: rows.length, area, areaCount: new Set(rows.map(r => r.area)).size,
+    words: levelWords(rows[0].province), height: Number.isFinite(sel.height) ? sel.height : null, services: serviceMixOf(rows, services)};
+}
+
+/**
+ * One learning record: the other records of its district (by service) and the schools round its published point
+ * (straight line, LEARNING_NEAR_M, nearest first) with the students they record — the reason a reader opens it.
+ */
+export function buildLearningDetail(row, {learningRows = [], schoolRows = [], index, services = [], building = null}) {
+  if (!row) return null;
+  const area = row.area ? index.byId.get(row.area) || null : null;
+  const sameArea = row.area ? learningRows.filter(r => r.area === row.area && r !== row) : [];
+  const near = hasPoint(row) ? nearPoint(schoolRows, row.latitude, row.longitude, LEARNING_NEAR_M) : [];
+  const schoolsInArea = row.area ? schoolRows.filter(r => r.area === row.area) : [];
+  return {row, area, words: levelWords(row.province), building,
+    sameArea: {count: sameArea.length, services: serviceMixOf(sameArea, services)},
+    schools: {radius: LEARNING_NEAR_M, rows: near.slice(0, 8), count: near.length, students: sum(near.map(x => x.row), 'students')},
+    schoolsInArea: {count: schoolsInArea.length, students: sum(schoolsInArea, 'students')}};
 }

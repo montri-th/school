@@ -25,7 +25,8 @@ export const streetViewURL = (lat, lon) => (Number.isFinite(lat) && Number.isFin
 const clean = s => String(s ?? '').replace(/\s+/g, ' ').trim();
 const join = (...parts) => clean(parts.filter(Boolean).join(' '));
 /**
- * ctx: {kind: 'school'|'building'|'area'|'station'|'aff'|'overview', row?, area?: {place, province}, station?, aff?,
+ * ctx: {kind: 'school'|'building'|'area'|'station'|'aff'|'overview'|'learning'|'learning-area'|'learning-station'|
+ *       'learning-overview', row?, area?: {place, province}, station?, aff?,
  *       province?, point?: {lat, lon, role}, rows?}
  * → [{id, label, href, note}] in display order (only the actions that apply).
  */
@@ -48,6 +49,20 @@ export function contextActions(ctx = {}) {
     add('maps', 'Google Maps', mapsSearchURL(`โรงเรียนใกล้สถานี${clean(s.name)}`));
   } else if (ctx.kind === 'aff' && ctx.aff) {
     add('ai', 'ถาม Google AI', googleAskURL(`${clean(ctx.aff.th)} มีโรงเรียนในสังกัดกี่แห่ง นักเรียนกี่คน และมีนโยบายหรือข่าวล่าสุดอะไรบ้าง`));
+  } else if (ctx.kind === 'learning' && ctx.row) {
+    const r = ctx.row, name = clean(r.name || r.nameEn);
+    add('ai', 'ถาม Google AI', googleAskURL(`${join(name, place ? `(${place})` : '')} สอนอะไรบ้าง เปิดคอร์สอะไร ค่าเรียนเท่าไร รีวิวเป็นอย่างไร และยังเปิดสอนอยู่ไหม`));
+    add('maps', 'Google Maps', mapsSearchURL(join(name, ctx.area?.place, ctx.area?.province)));
+  } else if (ctx.kind === 'learning-area' && ctx.area) {
+    add('ai', 'ถาม Google AI', googleAskURL(`ที่เรียนพิเศษ กวดวิชา สอนภาษา และศิลปะใน${clean(ctx.area.place)} ${clean(ctx.area.province)} มีที่ไหนบ้าง ค่าเรียนประมาณเท่าไร และย่านไหนเดินทางสะดวก`));
+    add('maps', 'Google Maps', mapsSearchURL(`กวดวิชา ${join(ctx.area.place, ctx.area.province)}`));
+  } else if (ctx.kind === 'learning-station' && ctx.station) {
+    const s = ctx.station;
+    add('ai', 'ถาม Google AI', googleAskURL(`ที่เรียนพิเศษ กวดวิชา หรือโรงเรียนสอนภาษาใกล้สถานี${clean(s.name)} มีที่ไหนบ้าง เดินไปกี่นาที ค่าเรียนเท่าไร`));
+    add('maps', 'Google Maps', mapsSearchURL(`กวดวิชาใกล้สถานี${clean(s.name)}`));
+  } else if (ctx.kind === 'learning-overview') {
+    const where = clean(ctx.province) || 'ประเทศไทย';
+    add('ai', 'ถาม Google AI', googleAskURL(`ภาพรวมโรงเรียนกวดวิชา สอนภาษา และศิลปะใน${where}ล่าสุด กระจุกอยู่ย่านไหน และมีที่เปิดใหม่หรือปิดบ้าง`));
   } else if (ctx.kind === 'overview') {
     const where = clean(ctx.province) || 'ประเทศไทย';
     add('ai', 'ถาม Google AI', googleAskURL(`ภาพรวมจำนวนนักเรียนและโรงเรียนใน${where}ล่าสุด นักเรียนลดลงหรือเพิ่มขึ้น และมีโรงเรียนเปิดใหม่หรือปิดที่ไหนบ้าง`));

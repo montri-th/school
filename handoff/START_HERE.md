@@ -1,12 +1,12 @@
 # CityMETER School — Developer Handoff
 
-รุ่นเผยแพร่ 0.1.0 · 5 พ.ย. 2569 · ชีตวิจัยตรวจแหล่ง 31 ต.ค. 2569 · อ่านและสร้างข้อมูล 5 พ.ย. 2569
+รุ่นเผยแพร่ 0.2.0 · 6 พ.ย. 2569 · ชีตวิจัยตรวจแหล่ง 31 ต.ค. 2569 · อ่านและสร้างข้อมูลโรงเรียน 5 พ.ย. 2569 · เรียนเสริม (แท็บ 27–29) 6 พ.ย. 2569
 
 เริ่มอ่าน `source/handoff/README.md` จากนั้น Product Statement (`source/PRODUCT_STATEMENT.md` + `source/handoff/product-statement.json`), Product Brief และ Implementation Plan ในโฟลเดอร์ `source/handoff` ทั้ง `.md` และ `.json` ใช้คู่กัน
 
 เข้าโฟลเดอร์ `source` แล้วรัน `npm test` และ `npm start` เปิด http://127.0.0.1:4173/
 
-ชุดนี้มี source code (ES modules มีคอมเมนต์สัญญาทุกโมดูล ต่อยอดจาก CityMETER · Hotel 0.3.6), datasets (ดัชนีเขต/อำเภอ + ขอบเขต 77 จังหวัด + สถานศึกษา นักเรียน สังกัด ค่าเรียน ผลประเมิน สถานี หน่วยอาคาร), assets ที่ตรวจ hash แล้ว, unit tests บนข้อมูลจริง, JSON Schema 1.5.0, acceptance criteria A1–A14, สคริปต์อ่านชีต/สร้างข้อมูล/ใบรับ/หน่วยอาคาร/manifest/bundle ตรวจ LDS + Location Intelligence parity และตรวจ live bytes อ่าน `source/AGENTS.md` ก่อนแก้ไข
+ชุดนี้มี source code (ES modules มีคอมเมนต์สัญญาทุกโมดูล ต่อยอดจาก CityMETER · Hotel 0.3.6), datasets (ดัชนีเขต/อำเภอ + ขอบเขต 77 จังหวัด + สถานศึกษา นักเรียน สังกัด ค่าเรียน ผลประเมิน สถานที่เรียนเสริม สถานี หน่วยอาคาร), assets ที่ตรวจ hash แล้ว, unit tests บนข้อมูลจริง, JSON Schema 1.5.0, acceptance criteria A1–A15, สคริปต์อ่านชีต/สร้างข้อมูล/เรียนเสริม/ใบรับ/หน่วยอาคาร/manifest/bundle ตรวจ LDS + Location Intelligence parity และตรวจ live bytes อ่าน `source/AGENTS.md` ก่อนแก้ไข
 
 เว็บจริง: https://montri-th.github.io/school/
 Repository: https://github.com/montri-th/school

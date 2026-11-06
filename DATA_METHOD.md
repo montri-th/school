@@ -1,8 +1,10 @@
 # CityMETER · School — data and method
 
-How `data/schools.json` is built, what one row and one figure mean, and what the demo never claims. Every number below is
-a snapshot of release 0.1.0 (data built 2026-11-05 from the research master as it stood on 2026-11-01, read cell by cell
-on 2026-11-05); the page computes everything from the data at run time, so these are fixtures, not constants.
+How `data/schools.json` and `data/learning.json` are built, what one row and one figure mean, and what the demo never
+claims. Every number below is a snapshot of release 0.2.0: the schools as built for 0.1.0 (2026-11-05, from the research
+master as it stood on 2026-11-01) and the learning-service layer of §14 (built 2026-11-06 from tabs 27–29 added to the
+same master on 2026-11-06, read cell by cell that day). The page computes everything from the data at run time, so these
+are fixtures, not constants.
 
 ## วิธีนับ — อ่านตัวเลขในหน้าอย่างไร
 
@@ -26,6 +28,11 @@ on 2026-11-05); the page computes everything from the data at run time, so these
 - **อาคารใกล้หมุด** = เมื่อหมุดไม่อยู่ในขอบอาคารใด มุมมองอาคาร 3 มิติเปิดที่อาคารบนแผนที่ที่ใกล้หมุดที่สุดภายใน 300 ม. (ไม่มีก็ขยายเป็น 800 ม.) โดยมีหมุดในภาพ เป็นการเลือกมุมกล้องเท่านั้น ไม่ได้ยืนยันว่าโรงเรียนอยู่ในอาคารนั้น
 - **ภูมิประเทศ** = พื้นดินรอบหมุด (รัศมี 500 ม. ต้นไม้ 300 ม.) จาก SRTM 30 ม. (สำรวจปี 2543) และแผนที่ OSM ไม่ใช่การประเมินความเสี่ยง
 - **สถานีที่กำลังสร้าง** = โครงการ ยังไม่ใช่บริการ
+- **เรียนเสริม** (0.2.0) = สถานที่เรียนเสริมและพัฒนาทักษะตามแท็บ `27_LEARNING_SERVICES` ของ research master เดียวกัน: รหัสโรงเรียนนอกระบบของ สช. ที่ทีมวิจัยจัดว่าเป็นกวดวิชา ภาษา ศิลปะ หรือพัฒนาการเด็ก (3,494 รหัส ตรวจต้นทาง 31 ต.ค. 2569) และจุดบริการที่ผู้ให้บริการยืนยัน (1 แห่ง) หนึ่ง “แห่ง” = หนึ่งรายการในทะเบียน ยังไม่ได้ตรวจว่ายังเปิดสอนอยู่ และสถานที่จริงหนึ่งแห่งอาจมีหลายรหัส นับแยกจากสถานศึกษา 40,828 แห่ง ไม่บวกรวมกัน (ไม่มีรหัส สช. ซ้ำกับโรงเรียนในชุดหลัก) ไม่มีจำนวนผู้เรียนและราคาคอร์ส
+- **บริการ** = ป้ายจากประเภทในทะเบียน สช. และชื่อที่ลงทะเบียน เป็นการจัดกลุ่มเบื้องต้นของทีมวิจัย หนึ่งแห่งมีได้หลายบริการ ตัวเลขรายบริการจึงรวมกันได้มากกว่ายอดรวม ส่วนยอดรวมนับแต่ละแห่งครั้งเดียว
+- **หมุดเรียนเสริม** (วงแหวนสี) = จุดในทะเบียน สช. (ค่าดิบตามต้นทาง) แสดงเฉพาะเมื่อจุดอยู่ในเขต/อำเภอที่ทะเบียนระบุ (680 แห่ง) ที่เหลือนับในเขต/อำเภอตามทะเบียนโดยไม่มีหมุด: ไม่มีพิกัด 2,588 · จุดอยู่นอกเขตที่ระบุ 158 · นอกจังหวัด 64 · ค่าใช้ไม่ได้ 5 “ใกล้รถไฟฟ้า” ของเรียนเสริมจึงคิดจากแห่งที่มีหมุดเท่านั้น (ตัวตั้งและตัวหารอยู่ในคำอธิบายแท่ง)
+- **เรียนเสริมรอบโรงเรียน** = แห่งที่มีหมุดในระยะตรง 1 กม. จากหมุดของโรงเรียน เรียงใกล้ก่อน (ไม่รวมแห่งที่ไม่มีหมุด) คู่กับจำนวนทั้งหมดในเขต/อำเภอเดียวกันตามทะเบียน · **โรงเรียนรอบ ๆ** ในหน้าเรียนเสริม = สถานศึกษาที่มีหมุดในระยะตรง 1 กม.
+- ไม่รวม: รหัส สช. ที่ทีมวิจัยพักไว้ตรวจ (277) และรหัสนอกหมวดเรียนเสริมรอบนี้ (4,456 เช่น ตาดีกา ปอเนาะ สอนศาสนา วิชาชีพ กีฬา)
 
 ## 1. Sources
 
@@ -37,13 +44,14 @@ on 2026-11-05); the page computes everything from the data at run time, so these
 | District outlines | `data/frames/{CODE}.json` (production SUBDISTRICT geometry dissolved to districts, from montri-th/pharmacy, as in Hotel) | Yes (display geometry) |
 | CityMETER · Transit | Rail stations (montri-th/transit @5f5232d0, `data/transit.json` SHA-256 0916636a…, release `transit-data-2026-10-31-r1`) | The stations the page draws or names (`stations`) |
 | Building units | `data/building-units/` copied from CityMETER · Hotel (montri-th/hotel @177e592f) by `scripts/adapt-building-units.py` (§10) | Yes |
+| Tabs 27–29 of the same master (read 2026-11-06) | `27_LEARNING_SERVICES` (the list the research team publishes, 3,495 records) · `28_OPEC_NONFORMAL` (the OPEC nonformal-school register checked at source 2026-10-31: 8,227 codes and their classification) · `29_LEARNING_LINKS` (provider records, cross-dataset links) | The fields of §14 only (`data/learning.json`, tabs bound by a hash in `meta.tabs`) |
 
 The workbook is 35 MB, too large for a Drive export: every tab was read from the sheet's own HTML view in the owner's
 browser (`scripts/export-sheet-tabs.js`, decoded by `scripts/decode-sheet-payload.py`), and the SHA-256 of each tab's
 rows as canonical JSON is recorded in `meta.tabs` so a later read can be compared tab by tab. The tab files stay
 outside the repository.
 
-## 2. One row, two measures
+## 2. One row, three measures
 
 One row = one CityMETER school UUID of the 2026 baseline (`source_school_id`): a row of `02_SCHOOLS` or of
 `03_CHILD_CENTERS`. 40,828 rows, one per record of `99_SOURCE_2026`; nothing is merged, split, moved or re-labelled; the
@@ -53,6 +61,7 @@ one school with an official closure notice stays in (§6). A row is a roster rec
 |---|---|---|---|
 | `students` (default) | Σ `student_count` (CityMETER 2026, positive values only; the source's raw zeros and blanks are unknown) | คน | LI `li.supply` |
 | `count` | records | แห่ง | LDS `count` |
+| `learning` (0.2.0) | learning-service records of `data/learning.json` (§14) — a different set of rows, never added to the schools | แห่ง | LDS `count` |
 
 10,134,747 students are recorded for 40,338 rows; 490 rows have no known count. A record with unknown students adds
 nothing to a student total and is counted apart (`studentsUnknown`): a bar “ไม่ทราบ”, a hollow map symbol, “—” in a
@@ -163,8 +172,9 @@ both themes (owner standing rule “Color scale ขอให้ใช้ 41 scal
 measured_zero (no record under the filters: sample 0 + the zero outline; every district holds at least one record
 without filters) · no_data (students only: records with no known count → hatch). Groups bind to LDS series by stable id
 with their shape cue (circle สพฐ. · square เอกชน · triangle นานาชาติ · diamond ท้องถิ่น · cross อาชีวะ · hexagon สกร. ·
-plus ศพด. · dash รัฐอื่น); no star (it would read as a rating). Ordinal bars (sizes, levels, stations, affiliations) use
-one neutral foundation fill.
+plus ศพด. · dash รัฐอื่น); no star (it would read as a rating). Learning records (§14) take series 8 with its ring, the one
+free slot; their service bars use that series fill. Ordinal bars (sizes, levels, stations, affiliations) use one neutral
+foundation fill.
 
 ## 10. Map: symbols, names, terrain, buildings
 
@@ -187,7 +197,8 @@ official code periods, source names, review notes, count notes, classification n
 extent checks, the supplemental enrolment columns, `05_REVIEW_QUEUE`, `04_SOURCE_CROSSWALK`, `14_EXTERNAL_CANDIDATES`,
 the 99_SOURCE_2026 raw records, internal sheet, Drive and API URLs (`meta.excludedFields`). Source links are public
 https pages only: OPEC school profiles (their address carries the school's public OPEC code), the ONESQA open-data
-catalogue and schools' own fee pages. No logos: the roster carries none.
+catalogue and schools' own fee pages. No logos are published: the logo libraries of the master (tabs 24–26) are Drive
+files outside this release. The learning layer's own exclusions are listed in §14.
 
 ## 12. Research follow-ups (reported, not patched in `data/`)
 
@@ -199,6 +210,12 @@ catalogue and schools' own fee pages. No logos: the roster carries none.
 - 7,750 rows have no accepted point (child development centres above all).
 - Building units were evaluated for hotel-holding อปท. only; evaluating the others would extend CityMETER Building V4 to
   every school.
+- Learning services: 222 registry points lie outside the district the register lists (158 in another district, 64 in
+  another province), 5 are malformed or outside Thailand and 2,588 records have none; 277 codes are held for review.
+  Course prices are not yet recorded (the sheet's README asks for them per course or session, apart from annual tuition).
+- Re-read 2026-11-06: tabs 01, 02, 03, 10, 15, 16, 20 and 99 hold the same values as the 5 Nov read; 97 multi-URL cells
+  now render their line breaks differently in the sheet's HTML view and one name lost a trailing non-breaking space —
+  `data/schools.json` is unchanged.
 
 ## 13. Rebuild
 
@@ -213,5 +230,43 @@ python3 -I scripts/build-data.py --tabs <tabs dir> --api <api dir> --index data/
 python3 -I scripts/build-receipts.py --api <api dir> --out .
 # 4. Building units from a montri-th/hotel checkout
 python3 -I scripts/adapt-building-units.py --hotel <montri-th/hotel checkout> --commit <hotel commit> --out data/building-units
+# 5. Learning services (0.2.0): tabs 27–29 of the same read, 02_SCHOOLS of the schools' read (overlap check)
+python3 -I scripts/build-learning.py --tabs <tabs dir> --base-tabs <schools' tabs dir> --index data/area-index.json \
+  --frames data/frames --transit <montri-th/transit checkout> --schools data/schools.json --out .
 npm test
 ```
+
+## 14. Learning services — เรียนเสริม (0.2.0)
+
+`scripts/build-learning.py` builds `data/learning.json` from tabs 27–29 (read 2026-11-06, the same browser read as §1;
+SHA-256 of each tab in `meta.tabs`) and stops on any failure:
+
+- **Rows**: the records of `27_LEARNING_SERVICES` (3,495) = the codes of `28_OPEC_NONFORMAL` the research team classed
+  `เข้าเกณฑ์เบื้องต้น` (3,494) + the provider-confirmed records of `29_LEARNING_LINKS` (1, Little Pea Kids Commons). 27 and
+  28 agree on name, province, district, subdistrict and services for every code, and the list's own summary (codes,
+  services, held, outside, providers, total) equals what the rows say. Not included: 277 codes held for review and
+  4,456 outside the learning categories of this round. One row is a licence record, not a place verified to teach today.
+- **Separate from the schools**: no code of the layer is an `official_school_code` of `02_SCHOOLS` (checked); the
+  measure `learning` reads these rows only, and nothing adds them to the 40,828 school records.
+- **Services**: `บริการที่พบ` of 28 — กวดวิชา 1,880 · ภาษา 1,287 · ศิลปะ 553 · พัฒนาการเด็ก 8 (a record may carry several,
+  bitmask `svc`). The register's main and secondary OPEC types are kept as written (`type`, e.g. กวดวิชา · วิชาชีพ) and the
+  research team's evidence for the label (`ev`: ประเภท สช. · ชื่อในทะเบียน สช. · both · the provider).
+- **District**: the DOPA district code of the register (`รหัสจังหวัด / อำเภอ / ตำบล`), a production district of the area
+  index whose name matches (every code checked); the provider record by its district name. 350 districts in 76 provinces.
+- **Points**: the OPEC registry point (raw in the source) is published only where it lies inside the listed district's
+  outline (`data/frames`, build time): 680 records (`pt` = pin). Not published: no point 2,588 · in another district of
+  the province 158 · in another province 64 · malformed or outside Thailand 5. A record without a pin counts in its
+  district, lists and ranks.
+- **Rail**: the nearest operating station of CityMETER · Transit within 2,000 m of a published point (the commit of
+  `data/schools.json`).
+- **Keys**: `L` + the first 12 hex of SHA-256 of `opec:<code>` (or `provider:<id>`); the OPEC code itself is not a field —
+  the public OPEC profile page (`school.opec.go.th/school/<code>`) is the source link, as for the schools.
+- **Page**: the third measure on the switch (records, LDS `count`, all 41 samples); the same Aha contract as §8 —
+  snapshot: **22% of Bangkok's learning records (207 of 960) are in Pathum Wan, Khlong Toei and Prawet**; with a pin, 68%
+  of theirs (39 of 57) lie within 500 m of an operating station against 34% (88 of 262) in the rest of Bangkok; Mueang
+  Chiang Mai holds 95, more than any Bangkok district. Panels: overview, district, station, building and one record
+  (services, OPEC type, district, rail, the schools with a pin within 1 km); the school, district and station panels of
+  the school measures show the district's learning records by service and, round a school, those with a pin within 1 km.
+  Symbols: one filled ring (LDS series 8) per record with a pin at the 200-student size (no student count); no star.
+- **Not copied** (`meta.excludedFields`): the OPEC code as a field, addresses, raw points that failed the check,
+  administrative codes, PDC codes, review groups and reasons, Playground ids and links, the held and outside codes.

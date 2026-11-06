@@ -3,8 +3,8 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-statement",
   "productId": "citymeter-school",
-  "productVersion": "0.1.0",
-  "updatedOn": "2026-11-05",
+  "productVersion": "0.2.0",
+  "updatedOn": "2026-11-06",
   "dataset_id": "research.TH.school",
   "productionDatasetCode": "school",
   "language": "th",
@@ -182,7 +182,48 @@
         }
       }
     },
-    "note": "fixtures of release 0.1.0 (tests/insight.test.js, tests/views.test.js), never UI constants"
+    "learning": {
+      "home": "BKK",
+      "areas": [
+        {
+          "id": "1007",
+          "name": "ปทุมวัน",
+          "value": 94
+        },
+        {
+          "id": "1033",
+          "name": "คลองเตย",
+          "value": 57
+        },
+        {
+          "id": "1032",
+          "name": "ประเวศ",
+          "value": 56
+        }
+      ],
+      "value": 207,
+      "homeValue": 960,
+      "sharePct": 22,
+      "rail": {
+        "m": 500,
+        "focus": {
+          "within": 39,
+          "base": 57
+        },
+        "rest": {
+          "within": 88,
+          "base": 262
+        }
+      },
+      "outside": {
+        "id": "5001",
+        "name": "เมืองเชียงใหม่",
+        "province": "CMI",
+        "value": 95
+      },
+      "file": "data/learning.json"
+    },
+    "note": "fixtures of release 0.1.0 (tests/insight.test.js, tests/views.test.js) and 0.2.0 (learning: tests/learning.test.js), never UI constants"
   },
   "data_transparency": {
     "unit": {
@@ -190,13 +231,15 @@
       "students": "student_count of CityMETER 2026, positive values only; blank is unknown, never 0; a child development centre counts its registered children",
       "fee": "annual tuition in THB per student per academic year, tuition only, for the grades and year the school published; not the total cost of a year, a price level or a quality level",
       "quality": "the latest ONESQA external-assessment result the sheet selected (B.E. 2564–2567), verbatim, with its year; not a current quality level or a ranking",
-      "history": "the reported grade sum of OPEC private-school snapshots, semesters 1–2 of B.E. 2565–2567; not 2026 figures"
+      "history": "the reported grade sum of OPEC private-school snapshots, semesters 1–2 of B.E. 2565–2567; not 2026 figures",
+      "learning": "one record of 27_LEARNING_SERVICES: an OPEC nonformal-school code classed เข้าเกณฑ์เบื้องต้น, or a provider-confirmed service point — a licence record of the register, not a field-verified count of places that teach today; one place may hold several codes; the research team's preliminary labels from the OPEC type and the registered name (กวดวิชา · ภาษา · ศิลปะ · พัฒนาการเด็ก); a record may carry several; a total counts each record once; counted apart from the 40,828 school UUIDs of data/schools.json; no OPEC code is shared with 02_SCHOOLS (checked at build time)"
     },
     "sources": [
       "research master “CityMETER School Thailand — Research Master 2026-10-31” (registry research.TH.school): CityMETER School 2026 of production, OPEC (สช.), ONESQA (สมศ.) open data, schools’ fee announcements",
       "CityMETER production base info (receipts in data/boundary-receipts.json)",
       "CityMETER · Transit (montri-th/transit @5f5232d0)",
-      "building units of CityMETER · Hotel (montri-th/hotel @177e592f)"
+      "building units of CityMETER · Hotel (montri-th/hotel @177e592f)",
+      "learning services (0.2.0): tabs 27_LEARNING_SERVICES · 28_OPEC_NONFORMAL · 29_LEARNING_LINKS of the same research master — the OPEC (สช.) nonformal-school register as the research team classed it, and one provider-confirmed point"
     ],
     "checkedOn": "2026-10-31",
     "readOn": "2026-11-05",
@@ -210,8 +253,13 @@
       "15_RESEARCH_COVERAGE": "2d4020b3324183b31e271f5e61db6dae4ecb62c799bb81256d8dbcdd8f867123",
       "16_ENROLMENT": "6c1f3640e9bab6c2b428d1a14e1d37b898dc3311e508336a1073fdfec04990d4",
       "20_SCHOOL_FEES": "9c4fdcd39a9df53c57501cbffe740d7af107622c178b6d6daae43edb3b74059d",
-      "10_SOURCES": "311602bd8dd3fafc926c3582f70e02e5741fe51eeb677907ddfa900e46afdf96"
-    }
+      "10_SOURCES": "311602bd8dd3fafc926c3582f70e02e5741fe51eeb677907ddfa900e46afdf96",
+      "27_LEARNING_SERVICES": "be998290ab7e7a6b0e6cc20234f66410de0bdf37d085a8e56f3c23bb2efa25ac",
+      "28_OPEC_NONFORMAL": "8f02a3a1f12e8e8526e00a85e8584a16ea23968dcd7b02e0afc0fbaf86884130",
+      "29_LEARNING_LINKS": "670bedd796307d732ba1471023cb4470f3086f472395bcd1bf9d6ecde89f9edb"
+    },
+    "learningReadOn": "2026-11-06",
+    "learningBuiltOn": "2026-11-06"
   },
   "known_limitations": [
     "Records are roster records of CityMETER School 2026; operation is not field-verified and the roster is not a census.",
@@ -220,7 +268,9 @@
     "Tuition is published for 86 schools only; a school without tuition in the data is not free; 6 sources are private copies or http pages and are not linked.",
     "The ONESQA result is the one the sheet selected (B.E. 2564–2567), verbatim; not a current quality level.",
     "Distances are straight lines between reference points; points are registry points, not entrances or campuses.",
-    "Building units come from the CityMETER · Hotel build: schools in local administrations it did not evaluate stand among OpenStreetMap buildings."
+    "Building units come from the CityMETER · Hotel build: schools in local administrations it did not evaluate stand among OpenStreetMap buildings.",
+    "Learning services are licence records of the OPEC nonformal-school register as the research team classed them (preliminary labels): one place may hold several codes, a record may no longer teach, and there is no learner count or course price; 277 codes are held for review.",
+    "Learning pins: 680 of 3,495 records; 2,588 have no registry point, 222 have one outside the district or province the register lists and 5 an unusable value — all counted in their district without a pin."
   ],
   "claimBoundary": {
     "canSay": [
@@ -228,7 +278,8 @@
       "ประเภท สังกัด ขนาด และระดับชั้น (สพฐ.) ของสถานศึกษา",
       "ระยะตรงถึงสถานี",
       "ค่าเรียนที่โรงเรียนประกาศสำหรับปีการศึกษาใด",
-      "ผลประเมิน สมศ. ปีใดว่าอย่างไร"
+      "ผลประเมิน สมศ. ปีใดว่าอย่างไร",
+      "สถานที่เรียนเสริมในทะเบียน สช. (ตามการจัดหมวดของทีมวิจัย) อยู่เขต/อำเภอใด บริการใด และที่มีหมุดอยู่รอบโรงเรียนหรือสถานีในระยะตรงเท่าใด"
     ],
     "cannotSay": [
       "อันดับหรือคุณภาพโรงเรียนวันนี้",
@@ -240,7 +291,9 @@
       "ความหนาแน่นต่อพื้นที่หรือต่อประชากร",
       "ว่าโรงเรียนเปิดสอนอยู่วันนี้",
       "ระยะเดินหรือเวลาเดินทาง",
-      "ว่าโรงเรียนที่ไม่มีค่าเรียนในข้อมูลเรียนฟรี"
+      "ว่าโรงเรียนที่ไม่มีค่าเรียนในข้อมูลเรียนฟรี",
+      "ว่าสถานที่เรียนเสริมยังเปิดสอน มีผู้เรียนกี่คน หรือคอร์สราคาเท่าไร",
+      "ยอดรวมของโรงเรียนกับสถานที่เรียนเสริม"
     ]
   },
   "hypotheses_to_validate": [
@@ -268,6 +321,16 @@
       "hypothesis": "นักเรียนที่ทะเบียนบันทึกใกล้เคียงนักเรียนที่เรียนอยู่จริงพอสำหรับการคัดกรอง",
       "test": "สุ่มตรวจ 200 แห่งกับระบบของสังกัด",
       "criterion": "คลาดไม่เกิน 10% ใน ≥ 80% ของตัวอย่าง"
+    },
+    {
+      "hypothesis": "เรียนเสริมรอบแปลง (กวดวิชา ภาษา ศิลปะ) ช่วยทีมพัฒนาโครงการและผู้ประกอบการคัดทำเลค้าปลีกด้านการศึกษา",
+      "test": "ให้ 5 ทีมใช้มาตรวัดเรียนเสริมเทียบ 3 ทำเล",
+      "criterion": "≥ 3 ใน 5 ทีมใช้ตัวเลขเรียนเสริมในเหตุผลการเลือก"
+    },
+    {
+      "hypothesis": "รายการในทะเบียน สช. ที่จัดเป็นเรียนเสริมยังเปิดสอนอยู่พอสำหรับการคัดกรอง",
+      "test": "สุ่มตรวจ 100 รายการ (โทร หน้าเว็บ แผนที่)",
+      "criterion": "ยังเปิดสอน ≥ 80%"
     }
   ]
 }

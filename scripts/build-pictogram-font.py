@@ -24,7 +24,9 @@ meeting rooms, payments as recorded price, account_tree as chain, local_mall)
 with school (records), students = groups, teacher = co_present, classroom =
 meeting_room, level = stairs, fee = payments, quality = verified, programme =
 menu_book, history = trending_up, aff = account_tree (สังกัด) and closed =
-event_busy. No star glyph: a star would read as a rating. Outbound links keep
+event_busy. School 0.2.0 adds learning = auto_stories (เรียนเสริม records) and the
+four services tutor = edit_note (กวดวิชา), language = translate (ภาษา), arts =
+palette (ศิลปะ) and child = child_care (พัฒนาการเด็ก). No star glyph: a star would read as a rating. Outbound links keep
 the nav-7 open_in_new mark.
 """
 import hashlib, json, sys
@@ -69,6 +71,13 @@ GLYPHS = {
     'distance': ('straighten', 0xE41C),
     'construction': ('construction', 0xEA3C),
     'dataset': ('database', 0xF20E),
+    # School 0.2.0 (owner 2026-11-06: เรียนเสริมและพัฒนาทักษะ from the same research master): the learning-service
+    # records and their four services.
+    'learning': ('auto_stories', 0xE666),
+    'tutor': ('edit_note', 0xE745),
+    'language': ('translate', 0xE8E2),
+    'arts': ('palette', 0xE40A),
+    'child': ('child_care', 0xEB41),
 }
 AXES = {'FILL': 0, 'wght': 300, 'GRAD': 0, 'opsz': 24}
 ROOT = Path(__file__).resolve().parent.parent
@@ -104,7 +113,7 @@ def main(src):
         'license': 'Apache-2.0 (assets/icons/material-symbols-Apache-2.0.txt)',
         'axes': AXES,
         'glyphs': {role: {'name': name, 'codepoint': f'U+{cp:04X}'} for role, (name, cp) in GLYPHS.items()},
-        'status': 'test exception to LDS nav-7 (owner 2026-10-22; actions and building added 2026-10-29; terrain glyphs 2026-11-01 for the map labels; rank, date, distance, construction and dataset 2026-11-01 for short copy; school glyphs 2026-11-05); nav-7 subset unchanged',
+        'status': 'test exception to LDS nav-7 (owner 2026-10-22; actions and building added 2026-10-29; terrain glyphs 2026-11-01 for the map labels; rank, date, distance, construction and dataset 2026-11-01 for short copy; school glyphs 2026-11-05; learning glyphs 2026-11-06); nav-7 subset unchanged',
     }
     MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
     print(f'wrote {OUT} ({len(data)} bytes, sha256 {manifest["sha256"]}) and {MANIFEST.name}')

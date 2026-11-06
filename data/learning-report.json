@@ -1,0 +1,33 @@
+{
+ "builtOn": "2026-11-06",
+ "checks": {
+  "overlap.schoolCodes": 0,
+  "point.none": 2588,
+  "point.otherDistrict": 158,
+  "point.otherProvince": 64,
+  "point.pin": 680,
+  "point.unusable": 5
+ },
+ "counts": {
+  "districts": 350,
+  "opec": 3494,
+  "points": 680,
+  "provider": 1,
+  "provinces": 76,
+  "register.codes": 8227,
+  "register.inScope": 3494,
+  "register.outOfScope": 4456,
+  "register.pending": 277,
+  "rows": 3495,
+  "service.arts": 553,
+  "service.child": 8,
+  "service.language": 1287,
+  "service.tutor": 1880
+ },
+ "rows": 3495,
+ "tabs": {
+  "27_LEARNING_SERVICES": 3505,
+  "28_OPEC_NONFORMAL": 8227,
+  "29_LEARNING_LINKS": 2
+ }
+}

@@ -1,6 +1,6 @@
 {
   "name": "citymeter-school",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "CityMETER · School — district-first 3D map of recorded students and school records across Thailand, with rail context from the same registry, affiliations, published tuition and a comparison set per school",
@@ -18,6 +18,7 @@
     "handoff:manifest": "node scripts/build-handoff.mjs",
     "handoff:bundle": "node scripts/build-handoff.mjs --zip dist/CityMETER-School-Developer-Handoff.zip",
     "verify:live": "node scripts/verify-live.mjs",
-    "build:units": "python3 -I scripts/adapt-building-units.py --help"
+    "build:units": "python3 -I scripts/adapt-building-units.py --help",
+    "build:learning": "python3 -I scripts/build-learning.py --help"
   }
 }

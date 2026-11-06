@@ -18,9 +18,12 @@ export function buildChartModel(rows, index, groups, {limit = 20, metric = 'stud
 export function areaMatrix(model, {areaLimit = 12} = {}) {
   const areas = model.areas.slice(0, areaLimit);
   const groups = model.groups;
+  const pos = new Map(groups.map((g, i) => [g.id, i]));
   const cells = areas.flatMap(a => {
     const values = new Array(groups.length).fill(0), counts = new Array(groups.length).fill(0);
-    for (const r of a.rows) { values[r.group] += rowValue(r, model.metric); counts[r.group]++; }
+    // Learning records (0.2.0): the columns are the services; a record with two services is in both columns.
+    if (model.metric === 'learning') { for (const r of a.rows) for (const s of r.services || []) { const i = pos.get(s); if (i >= 0) { values[i]++; counts[i]++; } } }
+    else for (const r of a.rows) { values[r.group] += rowValue(r, model.metric); counts[r.group]++; }
     // Students: a cell whose records all have unknown students is unknown, never a measured 0.
     return groups.map(g => ({areaId: a.id, areaName: a.name, groupId: g.id, group: g.index, groupName: g.th, value: values[g.index], count: counts[g.index],
       unknown: model.metric === 'students' && counts[g.index] > 0 && !values[g.index], total: a.value}));

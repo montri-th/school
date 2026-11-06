@@ -15,7 +15,7 @@
 
 1. แก้ข้อมูลในชีตวิจัยเท่านั้น (ไม่ commit ชีตหรือเซลล์ของชีต)
 2. อ่านแท็บด้วย `scripts/export-sheet-tabs.js` ในเบราว์เซอร์ที่เปิดชีตได้ แล้ว `scripts/decode-sheet-payload.py`
-3. `python3 -I scripts/build-data.py …` ตาม `DATA_METHOD.md` §13
+3. `python3 -I scripts/build-data.py …` และ `python3 -I scripts/build-learning.py …` ตาม `DATA_METHOD.md` §13
 4. `npm test` และ `npm run check:lds -- --lds <base> --li <profile>`
 5. ขยับ `?v=YYYYMMDD-rN` ใน `index.html` + `package.json` + `design-intent.json` + handoff JSON
 6. push `main` → GitHub Pages → `npm run handoff:manifest` → `npm run verify:live`
@@ -27,5 +27,6 @@
 - นักเรียนที่ไม่ทราบ ≠ 0 คน · ค่าเรียน = ตามประกาศ รายโรงเรียน พร้อมปีการศึกษา · ระยะ = ระยะตรง · ไม่มีคำเตือนบนหน้าจอ ข้อจำกัดอยู่หลังลิงก์ “วิธีนับ” (DATA_METHOD.md)
 - เขต/อำเภอของแถวมาจาก build (`row.admin`) ห้ามจับคู่ใหม่บนหน้าจอ · ประเภทนานาชาติมาจากระเบียน สช. ที่เชื่อมด้วย id ไม่ใช่ชื่อ
 - ระดับชั้นมีเฉพาะโรงเรียน สพฐ. ในทะเบียน 2569 อย่าเดาจากชื่อ
+- เรียนเสริม (0.2.0) เป็นแถวของตัวเองใน `data/learning.json` ห้ามบวกกับยอดโรงเรียน · บริการซ้อนกันได้ · หมุดเฉพาะจุดที่อยู่ในเขต/อำเภอตามทะเบียน (ตรวจตอน build) · ไม่มีรหัส สช. เป็นช่องข้อมูล ไม่มีที่อยู่
 - MapLibre ล็อกที่ 5.6.2 พร้อม `js/maplibre-guard.js` อย่าอัปเกรดโดยไม่ตรวจบั๊ก tile cover ซ้ำ
 - ลำดับ layer มวลอาคาร x-ray สถานี และหมุด มีผลต่อมุมมองอาคาร อย่าสลับโดยไม่ทดสอบ

@@ -88,7 +88,7 @@ export const byCount = (a, b) => b.count - a.count || (b.students ?? 0) - (a.stu
 /** Stable ordering by students (desc), then records, then name. */
 export const byStudents = (a, b) => (b.students ?? 0) - (a.students ?? 0) || b.count - a.count || COLLATOR.compare(a.name, b.name) || String(a.id).localeCompare(String(b.id));
 /** The ordering of a measure ('students' | 'count'). */
-export const byMetric = metric => (metric === 'count' ? byCount : byStudents);
+export const byMetric = metric => (metric === 'count' || metric === 'learning' ? byCount : byStudents);
 
 /** Bounds-like [[w, s], [e, n]] of a record: its loaded outline, else its index bbox. */
 export function recordBounds(record) {

@@ -151,9 +151,9 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
    The glyph is decorative (aria-hidden); the text label carries the meaning. Hidden until the font loads. */
 @font-face {
   font-family: "LDS Material Symbols Rounded Pictogram";
-  src: url("assets/icons/material-pictogram-300.woff2?v=5e614860") format("woff2");
+  src: url("assets/icons/material-pictogram-300.woff2?v=0c18b9ac") format("woff2");
   font-style: normal; font-weight: 300; font-display: block;
-  unicode-range: U+E55B, U+E7F1, U+E72C, U+E65F, U+E56E, U+E0C8, U+EA40, U+E80C, U+F233, U+EAF0, U+EB4F, U+F1A9, U+EF63, U+EF76, U+EA19, U+E8E5, U+E97A, U+E615, U+E570, U+E915, U+E176, U+E564, U+EA16, U+EA99, U+F20C, U+E878, U+E41C, U+EA3C, U+F20E;
+  unicode-range: U+E55B, U+E7F1, U+E72C, U+E65F, U+E56E, U+E0C8, U+EA40, U+E80C, U+F233, U+EAF0, U+EB4F, U+F1A9, U+EF63, U+EF76, U+EA19, U+E8E5, U+E97A, U+E615, U+E570, U+E915, U+E176, U+E564, U+EA16, U+EA99, U+F20C, U+E878, U+E41C, U+EA3C, U+F20E, U+E666, U+E745, U+E8E2, U+E40A, U+EB41;
 }
 .pictogram { display: inline-block; width: 20px; height: 20px; font: 300 20px/1 "LDS Material Symbols Rounded Pictogram"; font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24; letter-spacing: normal; text-transform: none; font-synthesis: none; vertical-align: -4px; visibility: hidden; color: var(--text-secondary); }
 .pictograms-ready .pictogram { visibility: visible; }
@@ -187,6 +187,11 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 .pic-distance::before { content: "\E41C"; }
 .pic-construction::before { content: "\EA3C"; }
 .pic-dataset::before { content: "\F20E"; }
+.pic-learning::before { content: "\E666"; }
+.pic-tutor::before { content: "\E745"; }
+.pic-language::before { content: "\E8E2"; }
+.pic-arts::before { content: "\E40A"; }
+.pic-child::before { content: "\EB41"; }
 .pic-plain { display: none; }
 .section-heading h3 .pictogram { width: 18px; height: 18px; font-size: 18px; margin-right: 6px; vertical-align: -3px; }
 .metric { position: relative; padding-left: 26px; }
@@ -506,14 +511,17 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
   .map-dock .map-legend { position: static; max-width: none; padding: 6px 10px 6px; gap: 4px; border: 0; border-radius: 0; background: transparent; }
   .map-dock .map-aha:not([hidden]) + .map-legend { border-top: 1px solid var(--border-hairline); }
   /* Legend in one row: the measure switch, then the level (with the zero swatch at its end) over the ramp. */
-  .map-dock #legend-areas { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0 8px; }
+  .map-dock #legend-areas { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0 6px; }
   .map-dock .metric-switch { grid-row: 1 / span 2; grid-column: 1; }
   .map-dock .metric-switch button { min-height: 34px; padding: 2px 10px; }
+  /* Three measures (0.2.0): a little tighter (buttons, gaps, zero swatch) so the legend title keeps one line at 390 px. */
+  .map-dock .metric-switch button { padding: 2px 8px; }
+  .map-dock .legend-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .map-dock .legend-title { grid-row: 1; grid-column: 2; font-size: 11px; line-height: 1.25; font-weight: 600; color: var(--text-secondary); margin: 0; }
   .map-dock .legend-steps { display: contents; }
   .map-dock .legend-ramp { grid-row: 2; grid-column: 2 / -1; width: 100%; min-width: 0; max-width: 280px; }
   .map-dock .ramp-zero { grid-row: 1; grid-column: 3; flex-direction: row; gap: 4px; min-width: 0; }
-  .map-dock .ramp-zero i { width: 18px; height: 10px; }
+  .map-dock .ramp-zero i { width: 14px; height: 10px; }
   .map-dock .legend-steps > .hint { grid-row: 2; grid-column: 2 / -1; }
   .legend-marks { display: none; }
   .map-status { display: none; }
@@ -708,9 +716,10 @@ td.num, th.num { text-align: right; }
 .legend-terrain-item { gap: 4px; }
 .category-cues { display: inline-flex; align-items: center; gap: 2px; margin-right: 6px; }
 .category-cues .cue-shape { width: 10px; height: 10px; flex-basis: 10px; margin: 0; }
-/* Area chips: the measure's pictogram stands for the unit (groups = คน, school = แห่ง); the title says it in words. */
+/* Area chips: the measure's pictogram stands for the unit (groups = คน, school = แห่ง, auto_stories = แห่งเรียนเสริม); the title says it in words. */
 .pictograms-ready .area-label .label-count::before { content: "\F233"; display: inline-block; margin-right: 3px; font: 300 12px/1 "LDS Material Symbols Rounded Pictogram"; font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 20; vertical-align: -2px; }
 .pictograms-ready .map-panel[data-metric="count"] .area-label .label-count::before { content: "\E80C"; }
+.pictograms-ready .map-panel[data-metric="learning"] .area-label .label-count::before { content: "\E666"; }
 /* School names near the middle of the view (js/labels.js). */
 .school-labels { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
 .school-label { position: absolute; left: 0; top: 0; display: inline-flex; align-items: center; gap: 5px; max-width: 230px; min-height: 0; padding: 3px 7px 3px 4px; background: var(--surface-card); color: var(--text-primary); border: 1px solid var(--border-default); border-radius: 6px; font: 600 12px/1.25 var(--font-body); white-space: nowrap; pointer-events: auto; cursor: pointer; opacity: 0; transition: opacity .18s ease; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
@@ -752,3 +761,13 @@ td.num, th.num { text-align: right; }
 .history-list .mix-label, .level-list .mix-label { font-variant-numeric: tabular-nums; }
 .fact-chip.is-closed { border-color: var(--state-warning-content); background: var(--state-warning-surface); color: var(--state-warning-content); font-weight: 600; }
 .aff-fill { background: var(--border-emphasis); }
+
+/* 11. School 0.2.0 — learning services (เรียนเสริม): service bars, lists, labels and the legend ring. ------------- */
+.mix-pic { width: 16px; height: 16px; font-size: 16px; vertical-align: 0; flex: none; }
+.service-list .mix-fill { background: var(--pin-fill); }
+.bar-label .pictogram, .matrix-col .pictogram { width: 15px; height: 15px; font-size: 15px; vertical-align: -2px; margin-right: 4px; flex: none; }
+.bar-fill.category-8 { background: var(--pin-fill); }
+.school-label .hl-services { display: inline-flex; align-items: center; gap: 0; flex: none; color: var(--text-secondary); }
+.school-label .hl-services .pictogram { width: 14px; height: 14px; font-size: 14px; vertical-align: 0; }
+.size-key .size-step .cue-shape { width: 12px; height: 12px; flex-basis: 12px; }
+.learning-section .links { margin-top: 6px; }

@@ -8,8 +8,13 @@
  *   rows      — baseRows narrowed by the district focus (if any): pins with detail, counters, the table.
  *
  * Measure (DATA_METHOD.md §2, state.metric): `students` (default) = Σ students the roster records (“คน”, LI
- * `li.supply`); `count` = school records (“แห่ง”, LDS `count`). The map, the legend, the labels, the Aha, the ranks and
- * the charts read the same measure; a record with unknown students is counted apart, never as 0 students.
+ * `li.supply`); `count` = school records (“แห่ง”, LDS `count`); `learning` (0.2.0, DATA_METHOD.md §14) = the
+ * learning-service records of data/learning.json (“แห่ง”, LDS `count`). The map, the legend, the labels, the Aha, the
+ * ranks and the charts read the same measure; a record with unknown students is counted apart, never as 0 students.
+ * The learning rows are their own universe: under that measure the three scopes hold learning rows (filters search ·
+ * province · service; the school fields are hidden and cleared), never school rows, and nothing adds the two. openRow
+ * crosses between the universes from a list, switching the measure and keeping the step (with its measure) in the
+ * back stack.
  *
  * District focus has three modes (state.focusAreaIds / state.autoFocus):
  *   auto     — default: up to three เขต/อำเภอ with the most of the measure in the province that holds the most of it
@@ -52,8 +57,12 @@ import {installBranchPins, DETAIL_MIN_ZOOM} from './pins.js';
 import {installAreaLayers, installAreaLabels, buildAreaModel, setFillSwitchZoom, AREA_MIN_ZOOM, PROVINCE_VIEW_MIN_ZOOM, FILL_MAX_ZOOM} from './map-layers.js';
 import {installProvinceLayers, buildProvinceModel, PROVINCE_FILL_MAX_ZOOM, PROVINCE_LABEL_MAX_ZOOM} from './provinces.js';
 import {createFrameStore, provinceLocator} from './frames.js';
-import {buildOverview, buildAreaProfile, buildSchoolDetail, buildBuildingProfile, buildAffProfile, buildStationProfile, stationsOf, listOrder, STATION_RADIUS_M} from './profile-model.js';
-import {renderOverview, renderArea, renderBuilding, renderSchool, renderStation, renderAffCard, renderFilterChips, terrainChipsHTML, subLine, esc, num, pct, words, meters, feeText, studentsText} from './panel.js';
+import {buildOverview, buildAreaProfile, buildSchoolDetail, buildBuildingProfile, buildAffProfile, buildStationProfile, stationsOf, listOrder, STATION_RADIUS_M,
+  buildLearningOverview, buildLearningArea, buildLearningStation, buildLearningBuilding, buildLearningDetail} from './profile-model.js';
+import {renderOverview, renderArea, renderBuilding, renderSchool, renderStation, renderAffCard, renderFilterChips, terrainChipsHTML, subLine, esc, num, pct, words, meters, feeText, studentsText,
+  renderLearningOverview, renderLearningArea, renderLearningStation, renderLearningBuilding, renderLearning, servicesText, link} from './panel.js';
+import {decodeLearning, filterLearning, isLearning, serviceMixOf, learningOrder, LEARNING_FIELDS, LEARNING_SERIES} from './learning.js';
+import {sizeValue} from './pins.js';
 import {installStationLayer} from './stations.js';
 import {joinBuildings, nearestBuilding} from './building-join.js';
 import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE, VENUE_XRAY_BEFORE} from './map-style.js';
@@ -69,9 +78,12 @@ import {installSchoolLabels} from './labels.js';
 import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './terrain.js';
 
 const $ = id => document.getElementById(id);
-const FIELDS = ['search', 'group', 'level', 'size', 'province', 'aff'];
+/** Filters of the school measures; the learning measure (0.2.0) has its own: search · province · service. */
+const SCHOOL_FIELDS = ['search', 'group', 'level', 'size', 'province', 'aff'];
+const FIELDS = [...SCHOOL_FIELDS, 'service'];
+const fieldsOf = metric => (metric === 'learning' ? LEARNING_FIELDS : SCHOOL_FIELDS);
 /** Filters that remove rows from a district (the province does not narrow its own districts). */
-const NARROWING = ['search', 'group', 'level', 'size', 'aff'];
+const narrowingOf = metric => (metric === 'learning' ? ['search', 'service'] : ['search', 'group', 'level', 'size', 'aff']);
 const BANGKOK = {center: [100.56, 13.735], zoom: 11.5};
 /** Release tag of this module (index.html import map) — also versions the province frame files. */
 const RELEASE = (() => { try { return new URL(import.meta.url).searchParams.get('v') || ''; } catch { return ''; } })();
@@ -81,7 +93,7 @@ const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobilePortrait = () => matchMedia('(max-width: 760px) and (orientation: portrait)').matches;
 
 const state = {
-  data: null, index: null, provincesGeo: null, frames: null,
+  data: null, learning: {meta: {}, services: [], rows: []}, index: null, provincesGeo: null, frames: null,
   scopeRows: [], baseRows: [], rows: [], insight: null,
   view: 'areas', page: 0, metric: 'students', stationById: new Map(), stationProfile: null, stations: null,
   focusAreaIds: [], autoFocus: true, focusIds: [], selectedArea: '', selectedId: '',
@@ -97,7 +109,10 @@ const state = {
 };
 
 /* ---------- helpers ---------- */
-const values = () => Object.fromEntries(FIELDS.map(k => [k, $(k).value]));
+/** The filter values that apply under a measure (the other measure's filters keep their value but do not apply). */
+const valuesFor = metric => Object.fromEntries(FIELDS.map(k => [k, fieldsOf(metric).includes(k) ? $(k).value : '']));
+const values = () => valuesFor(state.metric);
+const learningOn = () => state.metric === 'learning';
 const unit = () => unitWords(state.metric);
 const rowById = id => state.rowById.get(id) || null;
 const areaById = id => state.index.byId.get(id) || null;
@@ -133,7 +148,7 @@ function saveURL() {
   if (state.focusAreaIds.length) p.set('areas', state.focusAreaIds.join(','));
   else if (!state.autoFocus) p.set('areas', 'all');
   if (state.view !== 'areas') p.set('view', state.view);
-  if (state.panel.mode === 'school' && state.panel.id) p.set('school', state.panel.id);
+  if (state.panel.mode === 'school' && state.panel.id) p.set(isLearning(rowById(state.panel.id)) ? 'learn' : 'school', state.panel.id);
   if (state.panel.mode === 'station' && state.panel.id) p.set('station', state.panel.id);
   if (!state.view3d) p.set('view3d', '0');
   history.replaceState(null, '', location.pathname + (p.size ? '?' + p : ''));
@@ -160,18 +175,26 @@ function disposeSpatial() {
 }
 
 /* ---------- selection ---------- */
+/** The rows of a measure under its filters: school records, or the learning records (0.2.0) — never both. */
+function scopeOf(metric, f = valuesFor(metric)) {
+  return metric === 'learning' ? filterLearning(state.learning.rows, f) : filterRows(state.data.rows, f);
+}
+
 function update({fit = false} = {}) {
   const f = values();
-  // The scope only changes with the filters: a selection reuses it (and the pins keep their context).
-  const scopeKey = JSON.stringify(f);
-  if (scopeKey !== state.scopeKey) { state.scopeRows = filterRows(state.data.rows, f); state.scopeKey = scopeKey; }
+  // The scope only changes with the filters and the measure's rows: a selection reuses it (the pins keep their context).
+  const scopeKey = `${learningOn() ? 'L' : 'S'}${JSON.stringify(f)}`;
+  if (scopeKey !== state.scopeKey) { state.scopeRows = scopeOf(state.metric, f); state.scopeKey = scopeKey; }
+  syncFilterFields();
   const area = state.selectedArea ? areaById(state.selectedArea) : null;
   const station = state.panel.mode === 'station' ? stationById(state.panel.id) : null;
   state.baseRows = area ? state.scopeRows.filter(r => r.area === area.id) : state.scopeRows;
   state.insight = summarizeAreaInsight(state.scopeRows, state.index, {metric: state.metric});
   state.focusIds = state.focusAreaIds.length ? state.focusAreaIds : (state.autoFocus && !area && !station ? state.insight.areaIds : []);
   state.rows = state.focusIds.length ? filterAreaRows(state.baseRows, new Set(state.focusIds)) : state.baseRows;
-  state.stationProfile = station ? buildStationProfile(station, {scopeRows: state.scopeRows, groups: state.data.groups, metric: state.metric}) : null;
+  state.stationProfile = !station ? null : learningOn()
+    ? buildLearningStation(station, {scopeRows: state.scopeRows, services: state.learning.services})
+    : buildStationProfile(station, {scopeRows: state.scopeRows, groups: state.data.groups, metric: state.metric, learning: state.learning});
   state.page = 0;
   if (update.modelScope !== state.scopeRows || update.modelProvince !== f.province || update.modelMetric !== state.metric) {
     state.areaModel = buildAreaModel(state.scopeRows, state.index, {province: f.province, metric: state.metric});
@@ -203,7 +226,7 @@ function update({fit = false} = {}) {
   $('filter-chips').innerHTML = renderFilterChips(f, {
     group: Object.fromEntries(state.data.groups.map(g => [g.id, g.th])), level: Object.fromEntries([...LEVELS.map(l => [l.id, l.th]), [LEVEL_UNKNOWN, 'ไม่ทราบระดับชั้น']]),
     size: Object.fromEntries(SIZE_BANDS.map(b => [b.id, b.th])), province: Object.fromEntries(provinceList().map(p => [p.code, p.th])),
-    aff: Object.fromEntries(state.data.affs.map(a => [a.id, `สังกัด ${a.short}`]))});
+    aff: Object.fromEntries(state.data.affs.map(a => [a.id, `สังกัด ${a.short}`])), service: Object.fromEntries(state.learning.services.map(s => [s.id, s.th]))});
   renderPanel(s);
   renderLegend();
   syncMetricSwitch();
@@ -217,7 +240,15 @@ function update({fit = false} = {}) {
   drawChart();
   syncList();
   saveURL();
-  announce(`พบ ${num(s.count)} แห่ง นักเรียน ${num(s.students)} คน`);
+  announce(learningOn() ? `พบสถานที่เรียนเสริม ${num(s.count)} แห่ง` : `พบ ${num(s.count)} แห่ง นักเรียน ${num(s.students)} คน`);
+}
+
+/** Show the filters of the measure in use (the school filters, or the learning service filter) and its search words. */
+function syncFilterFields() {
+  const on = new Set(fieldsOf(state.metric));
+  for (const k of FIELDS) { const label = $(k)?.closest('label'); if (label && k !== 'search') label.hidden = !on.has(k); }
+  const words = learningOn() ? 'ค้นหาสถานที่เรียนเสริม บริการ หรือพื้นที่' : 'ค้นหาโรงเรียน สังกัด หรือพื้นที่';
+  if ($('search').placeholder !== words) { $('search').placeholder = words; $('search').previousElementSibling && ($('search').previousElementSibling.textContent = words); }
 }
 
 /** Rows with full detail on the map, in the counter and in the table: the open building's or station's rows, else the focused rows. */
@@ -233,7 +264,8 @@ function syncList() {
   const rows = detailRows(), b = currentBuilding();
   const st = state.panel.mode === 'station' ? state.stationProfile?.station : null;
   $('result-count').textContent = num(rows.length);
-  $('results-title').textContent = b ? 'สถานศึกษาในอาคารนี้' : st ? `สถานศึกษารอบสถานี${st.name} ${meters(STATION_RADIUS_M)}` : 'สถานศึกษาตามตัวกรอง';
+  const what = learningOn() ? 'สถานที่เรียนเสริม' : 'สถานศึกษา';
+  $('results-title').textContent = b ? `${what}ในอาคารนี้` : st ? `${what}รอบสถานี${st.name} ${meters(STATION_RADIUS_M)}` : `${what}ตามตัวกรอง`;
   const sig = rows.map(r => r.id).join(',');
   if (syncList.sig !== sig) state.page = 0;
   syncList.sig = sig;
@@ -317,14 +349,24 @@ const countClassOf = a => state.areaModel?.byId.get(a.id)?.fill || 'var(--scale-
 function panelCtx() {
   const f = values();
   const osm = /planet\/(\d{4})(\d{2})(\d{2})_/.exec(state.tileTemplate || '');
-  return {meta: state.data.meta || {}, unit: unit(), index: state.index, filtered: NARROWING.some(k => f[k]), osmDate: osm ? `${osm[1]}-${osm[2]}-${osm[3]}` : ''};
+  const meta = (learningOn() ? state.learning.meta : state.data.meta) || {};
+  return {meta, unit: unit(), index: state.index, filtered: narrowingOf(state.metric).some(k => f[k]), osmDate: osm ? `${osm[1]}-${osm[2]}-${osm[3]}` : ''};
 }
 
 /** Rows for the province frames: current filters WITHOUT the province filter, so every frame keeps its own count. */
 function provinceScopeRows() {
-  const f = {...values(), province: ''}, key = JSON.stringify(f);
-  if (key !== provinceScopeRows.key) { provinceScopeRows.key = key; provinceScopeRows.rows = filterRows(state.data.rows, f); }
+  const f = {...values(), province: ''}, key = `${state.metric === 'learning' ? 'L' : 'S'}${JSON.stringify(f)}`;
+  if (key !== provinceScopeRows.key) { provinceScopeRows.key = key; provinceScopeRows.rows = scopeOf(state.metric, f); }
   return provinceScopeRows.rows;
+}
+/** The learning records of the selection's place for the school overview (all records of the province, or of Thailand). */
+function learningTeaserData(province) {
+  if (!state.learning.rows.length) return null;
+  if (learningTeaserData.key !== province) {
+    const rows = province ? state.learning.rows.filter(r => r.province === province) : state.learning.rows;
+    learningTeaserData.key = province; learningTeaserData.value = {count: rows.length, services: serviceMixOf(rows, state.learning.services)};
+  }
+  return learningTeaserData.value;
 }
 function provinceSummaries() {
   try {
@@ -347,21 +389,32 @@ function renderPanel(summary = summarize(state.rows)) {
   const view = $('panel-view');
   const {mode, id} = state.panel;
   renderCrumbs();
-  const groups = state.data.groups, ctx = panelCtx(), metric = state.metric;
+  const groups = state.data.groups, ctx = panelCtx(), metric = state.metric, learn = learningOn(), services = state.learning.services;
   let html = '';
-  if (mode === 'area') html = renderArea(buildAreaProfile(state.scopeRows, id, state.index, groups, {metric}), countClassOf, ctx);
-  else if (mode === 'station') html = renderStation(state.stationProfile, ctx);
-  else if (mode === 'building') html = renderBuilding(buildBuildingProfile(currentBuilding(), state.index, groups), ctx);
-  else if (mode === 'school') html = renderSchool(buildSchoolDetail(rowById(id), {scopeRows: state.scopeRows, allRows: state.data.rows, index: state.index, groups,
-    periods: state.data.history, building: schoolBuilding(id)}), ctx);
+  if (mode === 'area') html = learn ? renderLearningArea(buildLearningArea(state.scopeRows, id, state.index, services), countClassOf, ctx)
+    : renderArea(buildAreaProfile(state.scopeRows, id, state.index, groups, {metric, learning: state.learning}), countClassOf, ctx);
+  else if (mode === 'station') html = learn ? renderLearningStation(state.stationProfile, ctx) : renderStation(state.stationProfile, ctx);
+  else if (mode === 'building') html = learn ? renderLearningBuilding(buildLearningBuilding(currentBuilding(), state.index, services), ctx)
+    : renderBuilding(buildBuildingProfile(currentBuilding(), state.index, groups), ctx);
+  else if (mode === 'school') {
+    const r = rowById(id);
+    html = isLearning(r)
+      ? renderLearning(buildLearningDetail(r, {learningRows: state.learning.rows, schoolRows: state.data.rows, index: state.index, services, building: schoolBuilding(id)}), ctx)
+      : renderSchool(buildSchoolDetail(r, {scopeRows: state.scopeRows, allRows: state.data.rows, index: state.index, groups,
+        periods: state.data.history, building: schoolBuilding(id), learning: state.learning}), ctx);
+  }
   state.renderedSig = panelSpatialSig();
   if (!html) {
     const f = values();
-    const overview = buildOverview(state.scopeRows, state.index, {province: f.province, groups, metric});
     const insight = focusMode() === 'explicit' ? explicitInsight() : state.insight;
-    const affCard = f.aff ? renderAffCard(buildAffProfile(f.aff, {allRows: state.data.rows, scopeRows: state.scopeRows, index: state.index, data: state.data, groups, metric}), ctx) : '';
-    html = renderOverview({insight, summary, overview, focusMode: focusMode(), classOf: countClassOf, provinces: f.province ? [] : provinceSummaries(),
-      unknownProvince: f.province ? 0 : state.scopeRows.filter(r => !r.province).length, province: f.province, affCard, stations: stationsOf(state.scopeRows, metric), ctx});
+    const common = {insight, summary, focusMode: focusMode(), classOf: countClassOf, provinces: f.province ? [] : provinceSummaries(),
+      unknownProvince: f.province ? 0 : state.scopeRows.filter(r => !r.province).length, province: f.province, stations: stationsOf(state.scopeRows, metric), ctx};
+    if (learn) html = renderLearningOverview({...common, overview: buildLearningOverview(state.scopeRows, state.index, {province: f.province, services})});
+    else {
+      const overview = buildOverview(state.scopeRows, state.index, {province: f.province, groups, metric});
+      const affCard = f.aff ? renderAffCard(buildAffProfile(f.aff, {allRows: state.data.rows, scopeRows: state.scopeRows, index: state.index, data: state.data, groups, metric}), ctx) : '';
+      html = renderOverview({...common, overview, affCard, learning: learningTeaserData(f.province)});
+    }
     renderMapAha(insight);
   } else {
     $('map-aha').hidden = true;
@@ -407,7 +460,7 @@ function renderMapAha(insight) {
 }
 
 function pushHistory() {
-  state.history.push({...state.panel, area: state.selectedArea, building: state.buildingSel, province: $('province').value});
+  state.history.push({...state.panel, area: state.selectedArea, building: state.buildingSel, province: $('province').value, metric: state.metric});
   if (state.history.length > 20) state.history.shift();
 }
 
@@ -418,6 +471,8 @@ function goBack() {
   const fromView = twoPoint() || state.panel.mode === 'station';
   const fit = fromView || ['station', 'building', 'school'].includes(previous.mode) || previous.area !== state.selectedArea || previous.province !== $('province').value;
   if (previous.province !== $('province').value) $('province').value = previous.province || '';
+  // A step across measures (a school's learning record, a learning record's school) comes back on its own measure.
+  if (previous.metric && previous.metric !== state.metric) state.metric = previous.metric;
   state.selectedArea = previous.area || '';
   if (previous.mode === 'building') state.buildingSel = previous.building || null;
   state.panel = {mode: previous.mode, id: previous.id};
@@ -474,7 +529,7 @@ function fitStation(s = stationById(state.panel.id), {instant = false} = {}) {
 function schoolPopup(r) {
   const wrap = document.createElement('div');
   wrap.className = 'popup-card';
-  const meta = [state.data.groups[r.group]?.th, studentsText(r), gradeRange(r)].filter(Boolean).join(' · ');
+  const meta = isLearning(r) ? ['เรียนเสริม', servicesText(r)].filter(Boolean).join(' · ') : [state.data.groups[r.group]?.th, studentsText(r), gradeRange(r)].filter(Boolean).join(' · ');
   wrap.innerHTML = `<div class="popup-identity">${cueMarkup(r.series)}<div><h3>${esc(r.name || r.nameEn || 'ไม่มีชื่อ')}</h3>${subLine(r, 'popup-branch', 'p')}</div></div>
     <p class="popup-meta">${esc(meta)}</p>`;
   return wrap;
@@ -485,19 +540,21 @@ function schoolPopup(r) {
  * that is unknown, a 90 m box round the point — in two-point perspective, zoomed to fit, from every way in (pin,
  * building, list, table, search, URL). A school without a point frames its district.
  */
-function selectSchool(id, {fly = true, showPopup = false, fromPin = false} = {}) {
+function selectSchool(id, {fly = true, showPopup = false, fromPin = false, history = true} = {}) {
   const r = rowById(id);
   if (!r) return;
   if (state.schoolReach?.id !== id) state.schoolReach = null;
   // The Hotel rule of 2026-11-02: a pin always opens the 2-point view of a 3D building mass.
   if (hasPoint(r)) ensure3d();
-  if (state.panel.mode !== 'school') pushHistory();
-  // A school outside the filters (a comparison-set row reads every row): clear the filters to keep it in scope.
-  const outside = !state.scopeRows.includes(r);
-  if (outside) { for (const k of FIELDS) $(k).value = ''; state.selectedArea = ''; }
+  if (history && state.panel.mode !== 'school') pushHistory();
+  // A record of the other measure's rows opens on its own measure (openRow); one outside the filters (a
+  // comparison-set row reads every row) clears the filters of its measure to keep it in scope.
+  const stale = state.scopeKey[0] !== (learningOn() ? 'L' : 'S');
+  const outside = !(stale ? scopeOf(state.metric) : state.scopeRows).includes(r);
+  if (outside) { for (const k of fieldsOf(state.metric)) $(k).value = ''; state.selectedArea = ''; }
   state.panel = {mode: 'school', id};
   state.selectedId = id;
-  if (outside) update();
+  if (outside || stale) update();
   else {
     ensureFrames();
     renderPanel();
@@ -522,6 +579,22 @@ function selectSchool(id, {fly = true, showPopup = false, fromPin = false} = {})
     state.lastPreset = cameraPreset();
   }
   announce(`เลือก ${r.name || r.nameEn || ''}`);
+}
+
+/**
+ * Open a record from a list: a learning record from a school's panel switches to the learning measure, a school from
+ * a learning record's panel back to the students measure (0.2.0). The step is kept in the back stack with its measure.
+ */
+function openRow(id, opts = {}) {
+  const r = rowById(id);
+  if (!r) return;
+  const want = isLearning(r) ? 'learning' : learningOn() ? 'students' : state.metric;
+  if (want === state.metric) { selectSchool(id, opts); return; }
+  pushHistory();
+  state.metric = want;
+  state.focusAreaIds = [];
+  selectSchool(id, {...opts, history: false});
+  announce(`${want === 'learning' ? 'เรียนเสริม' : 'นักเรียน'} · ${r.name || r.nameEn || ''}`);
 }
 
 /** A building the map draws, opened from a click (or from a school panel): the schools whose points fall in it. */
@@ -901,11 +974,29 @@ function filterBy(field, id) {
  * is kept; the automatic focus follows the new measure and the overview frames it.
  */
 function setMetric(value) {
-  const next = value === 'count' ? 'count' : 'students';
+  const next = ['count', 'learning'].includes(value) && (value !== 'learning' || state.learning.rows.length) ? value : 'students';
   if (next === state.metric) { syncMetricSwitch(); return; }
+  const across = (next === 'learning') !== learningOn();
   state.metric = next;
+  // Across the two sets of rows (schools | learning records) an open record of the other set closes; a district or a
+  // station stays open with the new measure's rows.
+  if (across && state.panel.mode === 'school') { state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea} : overviewPanel(); state.history = []; }
+  if (across) state.focusAreaIds = [];
   update({fit: state.panel.mode === 'overview' && focusMode() !== 'explicit'});
-  announce(next === 'count' ? 'วัดด้วยจำนวนสถานศึกษา (แห่ง)' : 'วัดด้วยจำนวนนักเรียน (คน)');
+  announce(next === 'count' ? 'วัดด้วยจำนวนสถานศึกษา (แห่ง)' : next === 'learning' ? 'วัดด้วยจำนวนสถานที่เรียนเสริม (แห่ง)' : 'วัดด้วยจำนวนนักเรียน (คน)');
+}
+
+/** A service bar or chip: the learning measure, filtered to that service, in the open district or station. */
+function filterService(id) {
+  if (![...$('service').options].some(o => o.value === id)) return;
+  $('service').value = id;
+  state.focusAreaIds = [];
+  state.history = [];
+  const keep = ['area', 'station'].includes(state.panel.mode);
+  if (!keep) state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea} : overviewPanel();
+  if (!learningOn()) state.metric = 'learning';
+  update({fit: !keep});
+  announce(`เรียนเสริม · ${state.learning.services.find(s => s.id === id)?.th || ''}`);
 }
 function syncMetricSwitch() {
   for (const b of document.querySelectorAll('[data-metric]')) {
@@ -921,7 +1012,8 @@ function onPanelAction(event) {
   const {action, id, value} = target.dataset;
   switch (action) {
     case 'select-area': selectArea(id); break;
-    case 'select-school': selectSchool(id); break;
+    case 'select-school': openRow(id); break;
+    case 'filter-service': filterService(value); break;
     case 'select-building': selectBuilding(id); break;
     case 'select-station': selectStation(id); break;
     case 'select-province': selectProvince(id); break;
@@ -965,7 +1057,7 @@ function sizeKeyHTML() {
 /** Map status: pin + number in view (owner 2026-11-01: icons instead of long text); the sentence is the title. */
 function renderMapStatus(stats) {
   const el = $('map-status');
-  const text = `สถานศึกษาในจอ ${num(stats.focusInView)} แห่ง${stats.contextRows ? ` · นอกโฟกัส ${num(stats.contextRows)} แห่ง` : ''}`;
+  const text = `${learningOn() ? 'สถานที่เรียนเสริมที่มีหมุด' : 'สถานศึกษา'}ในจอ ${num(stats.focusInView)} แห่ง${stats.contextRows ? ` · นอกโฟกัส ${num(stats.contextRows)} แห่ง` : ''}`;
   el.innerHTML = `<i class="pictogram pic-maps" aria-hidden="true"></i><span class="data-number">${num(stats.focusInView)}</span> ในจอ`;
   el.title = text;
   el.setAttribute('aria-label', text);
@@ -986,7 +1078,19 @@ function renderLegend() {
   $('legend-areas').title = atProvince
     ? `${u.label}รวมต่อจังหวัด · สีเข้ม = มาก · ซูมเข้าเพื่อดูรายเขต/อำเภอ`
     : `${u.label}รวมต่อเขต/อำเภอ · สีเข้ม = มาก`;
-  $('legend-pin-label').innerHTML = sizeKeyHTML();
+  // Learning records have no student count: one filled ring per record with a pin (no size key).
+  const learn = learningOn();
+  $('legend-pin-label').innerHTML = learn ? `<span class="size-step">${cueMarkup(LEARNING_SERIES)}<span>1 แห่ง</span></span>` : sizeKeyHTML();
+  $('legend-pin').title = learn ? '1 สัญลักษณ์ = 1 สถานที่เรียนเสริมที่มีหมุดในเขต/อำเภอตามทะเบียน'
+    : '1 สัญลักษณ์ = 1 สถานศึกษา · ขนาดตามจำนวนนักเรียน (100 · 500 · 2,000 คน) · วงโปร่ง = ไม่ทราบจำนวนนักเรียน';
+  const what = learn ? 'สถานที่เรียนเสริม' : 'สถานศึกษา';
+  document.querySelector('.legend-station-item')?.setAttribute('title', `สถานีรถไฟฟ้าที่เปิดแล้ว · กดเพื่อดู${what}รอบ 500 ม.`);
+  document.querySelector('.legend-context-item')?.setAttribute('title', `${what}นอกโฟกัส · กดเพื่อไปพื้นที่นั้น`);
+  if (renderLegend.categories !== learn) {
+    renderLegend.categories = learn;
+    $('category-items').innerHTML = learn ? `<span>${cueMarkup(LEARNING_SERIES)}เรียนเสริม</span>` : state.data.groups.map(g => `<span>${cueMarkup(g.series)}${esc(g.th)}</span>`).join('');
+    $('category-cues').innerHTML = learn ? cueMarkup(LEARNING_SERIES) : state.data.groups.map(g => cueMarkup(g.series)).join('');
+  }
   const terrainItem = $('legend-terrain');
   if (terrainItem) terrainItem.hidden = !state.terrainActive;
   // Which outlines the focus buildings come from (owner 2026-11-01, point 3): CityMETER Building V4 inside CityMETER units.
@@ -1009,10 +1113,13 @@ function drawChart() {
   const u = unit();
   const narrowed = state.selectedArea || state.panel.mode === 'station' || state.focusIds.length;
   $('chart-scope').textContent = `${num(state.scopeRows.length)} แห่งในตัวกรอง${narrowed ? ' · ทุกพื้นที่' : ''}`;
+  const learn = learningOn();
+  $('tab-mix').textContent = learn ? 'บริการในแต่ละพื้นที่' : 'ประเภทสถานศึกษา';
+  $('tab-affs').textContent = learn ? 'บริการ' : 'สังกัด';
   if ($('insight-content').hidden) return;
-  chartDispose = renderInsightChart({elementId: 'chart', view: state.view, rows: state.scopeRows, index: state.index, groups: state.data.groups, theme: theme(),
+  chartDispose = renderInsightChart({elementId: 'chart', view: state.view, rows: state.scopeRows, index: state.index, groups: state.data.groups, services: state.learning.services, theme: theme(),
     selectedAreaId: state.selectedArea, selectedAff: $('aff').value, unit: u, national: !$('province').value},
-  selection => { if (selection.type === 'area') selectArea(selection.id, {fromMap: true}); else if (selection.type === 'aff') filterAff(selection.id); });
+  selection => { if (selection.type === 'area') selectArea(selection.id, {fromMap: true}); else if (selection.type === 'aff') filterAff(selection.id); else if (selection.type === 'service') filterService(selection.id); });
 }
 
 function openInsights(open) {
@@ -1043,10 +1150,24 @@ function renderTable() {
   if ($('results').hidden && renderTable.done) { renderTable.stale = true; return; }
   renderTable.done = true; renderTable.stale = false;
   const pageSize = 25, start = state.page * pageSize;
-  const list = detailRows();
-  if (!renderTable.sorted || renderTable.source !== list) { renderTable.sorted = [...list].sort(listOrder); renderTable.source = list; }
+  const list = detailRows(), learn = learningOn();
+  if (!renderTable.sorted || renderTable.source !== list) { renderTable.sorted = [...list].sort(learn ? learningOrder : listOrder); renderTable.source = list; }
   const rs = renderTable.sorted.slice(start, start + pageSize);
-  $('result-rows').innerHTML = rs.map(r => `<tr>
+  const head = learn
+    ? '<tr><th scope="col">สถานที่เรียนเสริม / บริการ</th><th scope="col">ประเภทในทะเบียน</th><th scope="col">พื้นที่</th><th scope="col">รถไฟฟ้าใกล้สุด</th><th scope="col">ทะเบียน</th></tr>'
+    : '<tr><th scope="col">สถานศึกษา / ประเภท</th><th scope="col" class="num">นักเรียน</th><th scope="col">ระดับชั้น</th><th scope="col">สังกัด</th><th scope="col">พื้นที่</th><th scope="col">รถไฟฟ้าใกล้สุด</th><th scope="col">ค่าเรียน/ปี</th></tr>';
+  const thead = document.querySelector('#results thead');
+  if (thead && thead.innerHTML !== head) thead.innerHTML = head;
+  $('table-hint').textContent = learn ? 'เรียงตามจำนวนบริการ แล้วตามชื่อ · กดชื่อเพื่อดูรายละเอียด' : 'เรียงตามจำนวนนักเรียน · กดชื่อเพื่อดูรายละเอียด';
+  if (learn) {
+    $('result-rows').innerHTML = rs.map(r => `<tr>
+      <td><button type="button" class="row-name brand-row" data-id="${esc(r.id)}">${cueMarkup(r.series, {className: 'row-cue'})}<span>${esc(r.name || r.nameEn || 'ไม่มีชื่อ')}</span></button><small>${esc(servicesText(r))}</small></td>
+      <td>${r.type ? esc(r.type) : '<span class="hint">ผู้ให้บริการ</span>'}</td>
+      <td>${areaCell(r)}</td>
+      <td>${r.rail ? `${esc(r.rail.station.name)}<small class="data-number">${esc(meters(r.rail.m))}</small>` : '<span class="hint">—</span>'}</td>
+      <td>${r.url ? link(r.url, r.source === 'provider' ? 'ผู้ให้บริการ' : 'สช.') : '<span class="hint">—</span>'}</td></tr>`).join('') ||
+      '<tr><td colspan="5">ไม่พบสถานที่เรียนเสริมตามตัวกรอง</td></tr>';
+  } else $('result-rows').innerHTML = rs.map(r => `<tr>
       <td><button type="button" class="row-name brand-row" data-id="${esc(r.id)}">${cueMarkup(r.series, {className: 'row-cue'})}<span>${esc(r.name || r.nameEn || 'ไม่มีชื่อ')}</span></button><small>${esc(state.data.groups[r.group]?.th || '')}</small></td>
       <td class="num">${r.students ? `<span class="data-number">${num(r.students)}</span>` : '<span class="hint">ไม่ทราบ</span>'}</td>
       <td>${gradeRange(r) ? esc(gradeRange(r)) : '<span class="hint">—</span>'}</td>
@@ -1058,7 +1179,7 @@ function renderTable() {
   $('page-label').textContent = list.length ? `${num(start + 1)}–${num(Math.min(start + pageSize, list.length))} / ${num(list.length)}` : '0 แห่ง';
   $('prev-page').disabled = state.page === 0;
   $('next-page').disabled = start + pageSize >= list.length;
-  for (const b of $('result-rows').querySelectorAll('[data-id]')) b.onclick = () => { selectSchool(b.dataset.id); $('panel').scrollTop = 0; };
+  for (const b of $('result-rows').querySelectorAll('[data-id]')) b.onclick = () => { openRow(b.dataset.id); $('panel').scrollTop = 0; };
 }
 
 /* ---------- map ---------- */
@@ -1171,7 +1292,7 @@ function areaLabelItems() {
   const ordered = [...pool.filter(a => focus.has(a.id)), ...near, ...others];
   return ordered.map(a => ({id: a.id, name: a.name, value: num(a.value), state: a.state, quiet: focus.size > 0 && !focus.has(a.id),
     selected: a.id === state.selectedArea, center: navigating && state.labelView.has(a.id) ? state.labelView.get(a.id) : a.label, swatch: a.fill || '',
-    title: `${areaWord(a.province)}${a.name} · ${num(a.value)} ${u.one} · ${u.id === 'count' ? `${num(a.students)} คน` : `${num(a.count)} แห่ง`}`}));
+    title: `${areaWord(a.province)}${a.name} · ${num(a.value)} ${u.one}${u.id === 'learning' ? ` ${u.subject}` : ` · ${u.id === 'count' ? `${num(a.students)} คน` : `${num(a.count)} แห่ง`}`}`}));
 }
 
 /**
@@ -1308,7 +1429,7 @@ function updateSpatialLayers() {
   // Province chips after the district chips: they keep clear of them (installAreaLabels `avoid`), so they lay out second.
   state.provinceLabels?.update(pm ? pm.provinces.filter(p => p.value > 0 || p.code === code).sort((a, b) => (b.code === code) - (a.code === code) || b.value - a.value)
     .map(p => ({id: p.code, name: p.name, value: num(p.value), state: p.state, quiet: Boolean(code) && p.code !== code, selected: p.code === code, center: p.label, swatch: p.fill || '',
-      title: `${p.name} · ${num(p.value)} ${u.one} · ${u.id === 'count' ? `${num(p.students)} คน` : `${num(p.count)} แห่ง`}`})) : [], {visible: true});
+      title: `${p.name} · ${num(p.value)} ${u.one}${u.id === 'learning' ? ` ${u.subject}` : ` · ${u.id === 'count' ? `${num(p.students)} คน` : `${num(p.count)} แห่ง`}`}`})) : [], {visible: true});
   renderLegend();
   const st = state.panel.mode === 'station' ? stationById(state.panel.id) : null;
   state.stations?.select(st ? st.id : '', STATION_RADIUS_M);
@@ -1470,11 +1591,11 @@ function installSpatialLayers() {
     bounds: () => state.pins?.bounds?.() || {left: 0, top: 0, right: map.getContainer().clientWidth, bottom: map.getContainer().clientHeight, exclusions: []},
     // 0.3.2: in the building view a name never sits on the building being looked at (as the district chips).
     avoid: () => { const b = buildingScreenBox(); return b ? [{left: b.minX - 4, right: b.maxX + 4, top: b.minY - 4, bottom: b.maxY + 4}] : []; },
-    radius: (r, zoom) => (zoom >= DETAIL_MIN_ZOOM ? Math.max(4, Math.min(20, pinRadius(r.students, zoom))) : pinRadius(r.students, zoom)),
+    radius: (r, zoom) => (zoom >= DETAIL_MIN_ZOOM ? Math.max(4, Math.min(20, pinRadius(sizeValue(r), zoom))) : pinRadius(sizeValue(r), zoom)),
     isPhone: mobilePortrait,
     finePointer: () => matchMedia('(hover: hover) and (pointer: fine)').matches,
     num, feeText,
-    groupName: r => state.data.groups[r.group]?.short || state.data.groups[r.group]?.th || '',
+    groupName: r => (isLearning(r) ? 'เรียนเสริม' : state.data.groups[r.group]?.short || state.data.groups[r.group]?.th || ''),
   });
   updatePins();
   updateSpatialLayers();
@@ -1717,9 +1838,10 @@ function refreshOptionCounts() {
   setOptions('province', [...provinceList()].sort((a, b) => COLLATOR.compare(a.th, b.th)).map(p => [p.code, `${p.th} (${num(provinces.get(p.code) || 0)})`]));
   setOptions('aff', [...state.data.affs].filter(a => affs.get(a.id)).sort((a, b) => (affs.get(b.id) || 0) - (affs.get(a.id) || 0) || COLLATOR.compare(a.th, b.th))
     .map(a => [a.id, `${a.short === a.th ? a.th : `${a.short} · ${a.th}`} (${num(affs.get(a.id) || 0)})`]));
-  $('category-items').innerHTML = state.data.groups.map(g => `<span>${cueMarkup(g.series)}${esc(g.th)}</span>`).join('');
-  // The closed key shows the shapes themselves (owner 2026-11-01: symbols before words).
-  $('category-cues').innerHTML = state.data.groups.map(g => cueMarkup(g.series)).join('');
+  // Learning services (0.2.0): a record with two services is counted under both options.
+  const services = serviceMixOf(state.learning.rows, state.learning.services);
+  setOptions('service', services.map(s => [s.id, `${s.th} (${num(s.count)})`]));
+  renderLegend.categories = null; // the category key follows the measure (renderLegend)
 }
 
 function restoreFromURL() {
@@ -1727,6 +1849,9 @@ function restoreFromURL() {
   for (const f of FIELDS) if (p.has(f)) { const v = f === 'province' ? provinceCodeFrom(p.get(f)) : p.get(f); if (f === 'search' || [...($(f).options || [])].some(o => o.value === v)) $(f).value = v; }
   if (['areas', 'mix', 'affs'].includes(p.get('view'))) state.view = p.get('view');
   if (p.get('metric') === 'count') state.metric = 'count';
+  if (p.get('metric') === 'learning' && state.learning.rows.length) state.metric = 'learning';
+  // Filters of the measure only (a hidden filter of the other measure never narrows a deep link).
+  for (const f of FIELDS) if (!fieldsOf(state.metric).includes(f)) $(f).value = '';
   if (p.get('area') && areaById(p.get('area'))) state.selectedArea = p.get('area');
   const areas = p.get('areas') || '';
   if (areas === 'all') { state.autoFocus = false; state.focusAreaIds = []; }
@@ -1736,7 +1861,10 @@ function restoreFromURL() {
   const station = stationById(p.get('station'));
   if (station) { state.selectedArea = ''; state.panel = {mode: 'station', id: station.id}; }
   const school = p.get('school') && rowById(p.get('school'));
-  if (school) state.panel = {mode: 'school', id: school.id};
+  if (school && !isLearning(school)) state.panel = {mode: 'school', id: school.id};
+  const learn = p.get('learn') && rowById(p.get('learn'));
+  if (learn && isLearning(learn)) { state.metric = 'learning'; state.panel = {mode: 'school', id: learn.id}; }
+  if (state.panel.mode === 'school' && learningOn() !== isLearning(rowById(state.panel.id))) state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea} : overviewPanel();
 }
 
 function wireEvents() {
@@ -1808,10 +1936,12 @@ function wireEvents() {
 
 async function init() {
   try {
-    const [rowsJSON, indexJSON, provincesJSON] = await Promise.all([
+    const [rowsJSON, indexJSON, provincesJSON, learningJSON] = await Promise.all([
       fetchJSON('data/schools.json', {timeout: 30000}),
       fetchJSON('data/area-index.json', {timeout: 30000}),
       fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { console.warn('Province frames unavailable', e); return null; }),
+      // The learning-service layer (0.2.0): without it the page keeps the two school measures.
+      fetchJSON('data/learning.json', {timeout: 30000}).catch(e => { console.warn('Learning records unavailable', e); return null; }),
     ]);
     if (!Array.isArray(indexJSON?.provinces) || !indexJSON.provinces.length || !Array.isArray(indexJSON?.areas?.id)) {
       const e = new Error('Invalid area index'); e.resource = 'data/area-index.json'; e.phase = 'data-schema'; throw e;
@@ -1822,7 +1952,11 @@ async function init() {
     state.data = decodeDataset(rowsJSON, state.index);
     state.stationById = new Map(state.data.stations.map(s => [s.id, s]));
     if (state.data.dropped) console.warn('Rows outside the area index', state.data.dropped);
-    state.rowById = new Map(state.data.rows.map(r => [r.id, r]));
+    try { if (learningJSON) state.learning = decodeLearning(learningJSON, state.index, state.stationById); }
+    catch (e) { console.warn('Learning records invalid', e); }
+    if (state.learning.dropped) console.warn('Learning records outside the area index', state.learning.dropped);
+    document.querySelector('[data-metric="learning"]').hidden = !state.learning.rows.length;
+    state.rowById = new Map([...state.data.rows, ...state.learning.rows].map(r => [r.id, r]));
     state.frames = createFrameStore({index: state.index, fetchJSON, version: RELEASE, onLoad: onFramesLoaded,
       onError: (code, e) => { console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
     // Buildings per area (the Hotel rule of 2026-11-01, point 3): which อปท./เขต draw CityMETER Building V4 (js/building-units.js).
@@ -1847,6 +1981,6 @@ async function init() {
 }
 
 // Developer hook for live tuning in a browser console (not an API; may change without notice).
-window.__citymeter = {state, get map() { return state.map; }, update, fitMap, updateSpatialLayers, applyPreset: (name, opts) => state.map && applyPreset(state.map, name, opts), fitPitched: (b, opts) => state.map && fitPitched(state.map, b, opts), cameraPadding, visibleBox, focusTarget: () => focusTarget(), focusShape: () => focusShape(), frameFocus, selectSchool, selectStation, selectBuilding, buildingRows, setMetric, buildMapStyle};
+window.__citymeter = {state, get map() { return state.map; }, update, fitMap, updateSpatialLayers, applyPreset: (name, opts) => state.map && applyPreset(state.map, name, opts), fitPitched: (b, opts) => state.map && fitPitched(state.map, b, opts), cameraPadding, visibleBox, focusTarget: () => focusTarget(), focusShape: () => focusShape(), frameFocus, selectSchool, openRow, selectStation, selectBuilding, buildingRows, setMetric, filterService, buildMapStyle};
 
 init();

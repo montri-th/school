@@ -17,6 +17,7 @@
 import {cueMarkup} from './cues.js';
 import {gradeRange} from './model.js';
 import {terrainFacts, terrainChips} from './terrain.js';
+import {isLearning, SERVICE_PICTOGRAM} from './learning.js';
 
 export const LABEL_MIN_ZOOM = 12.5;
 export const LABEL_MAX = Object.freeze({desktop: 9, phone: 5});
@@ -48,9 +49,12 @@ export function shortName(row) {
   return name.length >= 3 ? name : original;
 }
 
-/** Pure: what a label says — one short name and the recorded students (null when unknown). Returns {site, students}. */
+/**
+ * Pure: what a label says — one short name and the recorded students (null when unknown); a learning record says its
+ * services as pictograms instead (0.2.0). Returns {site, students, services}.
+ */
 export function labelParts(row) {
-  return {site: shortName(row), students: known(row) ? row.students : null};
+  return {site: shortName(row), students: known(row) ? row.students : null, services: isLearning(row) ? [...(row.services || [])] : []};
 }
 
 /**
@@ -116,10 +120,13 @@ export function installSchoolLabels(map, container, {onSelect, bounds, avoid = (
     el.type = 'button';
     el.className = 'school-label';
     el.dataset.id = row.id;
-    const students = known(row) ? `${num(row.students)} คน` : 'ไม่ทราบจำนวนนักเรียน';
-    el.setAttribute('aria-label', [row.name || row.nameEn, students, gradeRange(row)].filter(Boolean).join(' · '));
     const parts = labelParts(row);
-    el.innerHTML = `<span class="hl-cue" aria-hidden="true">${cueMarkup(row.series)}</span><span class="hl-text"><span class="hl-name">${esc(parts.site)}</span></span>${parts.students ? `<span class="hl-students data-number"><i class="pictogram pic-students" aria-hidden="true"></i>${esc(num(parts.students))}</span>` : ''}`;
+    const said = isLearning(row) ? `เรียนเสริม · ${(row.serviceNames || []).join(' · ')}` : known(row) ? `${num(row.students)} คน` : 'ไม่ทราบจำนวนนักเรียน';
+    el.setAttribute('aria-label', [row.name || row.nameEn, said, gradeRange(row)].filter(Boolean).join(' · '));
+    const tail = parts.services.length
+      ? `<span class="hl-services" aria-hidden="true">${parts.services.map(s => `<i class="pictogram pic-${esc(SERVICE_PICTOGRAM[s] || 'learning')}"></i>`).join('')}</span>`
+      : parts.students ? `<span class="hl-students data-number"><i class="pictogram pic-students" aria-hidden="true"></i>${esc(num(parts.students))}</span>` : '';
+    el.innerHTML = `<span class="hl-cue" aria-hidden="true">${cueMarkup(row.series)}</span><span class="hl-text"><span class="hl-name">${esc(parts.site)}</span></span>${tail}`;
     el.onclick = () => onSelect?.(row);
     el.onmouseenter = () => { if (finePointer()) showCard(row, el); };
     el.onmouseleave = () => hideCard(row);
@@ -207,7 +214,11 @@ export function installSchoolLabels(map, container, {onSelect, bounds, avoid = (
     if (!row) return;
     cardRow = row; cardAnchor = anchor;
     const grades = gradeRange(row);
-    const chips = [
+    const chips = isLearning(row) ? [
+      `<span class="hc-chip">${cueMarkup(row.series)}เรียนเสริม</span>`,
+      ...(row.services || []).map((s, i) => chip(SERVICE_PICTOGRAM[s] || 'learning', row.serviceNames[i], 'บริการตามทะเบียน สช.')),
+      row.type ? chip('segment', row.type, 'ประเภทในทะเบียนโรงเรียนนอกระบบ สช.') : '',
+    ].filter(Boolean).join('') : [
       `<span class="hc-chip">${cueMarkup(row.series)}${esc(groupName(row))}</span>`,
       row.closed ? chip('closed', 'ประกาศปิด') : '',
       known(row) ? chip('students', `${num(row.students)} คน`, 'นักเรียน') : chip('students', 'ไม่ทราบ', 'ไม่ทราบจำนวนนักเรียน'),

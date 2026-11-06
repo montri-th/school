@@ -33,7 +33,9 @@ test('candidates come from the central ellipse only; placement avoids blockers a
   for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) assert.ok(!overlaps(placed[i].box, placed[j].box), 'never on another label');
 });
 
-test('label text: one short name and the recorded students (no number when unknown)', () => {
-  assert.deepEqual(labelParts({name: 'บ้านชี', students: 120}), {site: 'บ้านชี', students: 120});
-  assert.deepEqual(labelParts({name: 'ศพด.บ้านคลองใหญ่', students: null}), {site: 'บ้านคลองใหญ่', students: null}, 'unknown students → no number, never 0');
+test('label text: one short name and the recorded students (no number when unknown); a learning record says its services', () => {
+  assert.deepEqual(labelParts({name: 'บ้านชี', students: 120}), {site: 'บ้านชี', students: 120, services: []});
+  assert.deepEqual(labelParts({name: 'ศพด.บ้านคลองใหญ่', students: null}), {site: 'บ้านคลองใหญ่', students: null, services: []}, 'unknown students → no number, never 0');
+  assert.deepEqual(labelParts({kind: 'learning', name: 'โรงเรียนกวดวิชาเอ็มบีเอ', services: ['tutor', 'language'], students: null}),
+    {site: 'กวดวิชาเอ็มบีเอ', students: null, services: ['tutor', 'language']}, 'the leading โรงเรียน is dropped; services as pictograms, never a student count');
 });

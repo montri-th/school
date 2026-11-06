@@ -24,11 +24,17 @@ export const GROUP_SHORT = Object.freeze({
   childcare: 'ศพด.', other: 'รัฐอื่น',
 });
 
-/** Measures: `students` (default) and `count`. */
+/**
+ * Measures: `students` (default), `count` (school records) and `learning` (0.2.0: learning-service records of
+ * data/learning.json — a different set of rows, counted apart from the schools and never added to them).
+ */
 export const METRICS = Object.freeze({
   students: Object.freeze({id: 'students', one: 'คน', label: 'นักเรียน', subject: 'นักเรียน', per: 'คน'}),
   count: Object.freeze({id: 'count', one: 'แห่ง', label: 'สถานศึกษา', subject: 'สถานศึกษา', per: 'แห่ง'}),
+  learning: Object.freeze({id: 'learning', one: 'แห่ง', label: 'เรียนเสริม', subject: 'สถานที่เรียนเสริม', per: 'แห่ง'}),
 });
+/** A measure that counts records (one row = 1): school records or learning records. */
+export const countsRecords = metric => metric === 'count' || metric === 'learning';
 export const metricOf = id => METRICS[id] || METRICS.students;
 /** Unit words for a measure ('' = students). */
 export const unitWords = (metric = '') => ({...metricOf(metric), mode: metricOf(metric).id});
@@ -121,9 +127,9 @@ export function importanceScores(rows) {
 }
 
 /** The value a row adds to a measure: its students (known only) or 1 record. */
-export const rowValue = (r, metric = 'students') => (metric === 'count' ? 1 : (Number.isFinite(r?.students) && r.students > 0 ? r.students : 0));
+export const rowValue = (r, metric = 'students') => (countsRecords(metric) ? 1 : (Number.isFinite(r?.students) && r.students > 0 ? r.students : 0));
 /** The value of an aggregate ({count, students}) under a measure. */
-export const valueOf = (a, metric = 'students') => (metric === 'count' ? a?.count || 0 : a?.students || 0);
+export const valueOf = (a, metric = 'students') => (countsRecords(metric) ? a?.count || 0 : a?.students || 0);
 
 /** Every province of the production base info, keyed by the production route code (/v3/citymeter/{code}). */
 let PROVINCE_LIST = [];

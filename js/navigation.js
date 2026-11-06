@@ -21,20 +21,22 @@ export const NAV_GLYPHS = Object.freeze({
  * (account_tree) = สังกัด · closed (event_busy) = ประกาศปิด · area (map) = เขต/อำเภอ · province (location_city) =
  * จังหวัด · segment (category) = ประเภทสถานศึกษา · rail (train) = สถานีราง · compare (compare_arrows) = คู่เทียบ ·
  * building (apartment) = อาคาร · sea (waves) · elevation (landscape) · relief (height) · forest = the ground round a
- * school. No star glyph: it would read as a rating.
+ * school · learning (auto_stories) = เรียนเสริม (records) · tutor (edit_note) = กวดวิชา · language (translate) = ภาษา ·
+ * arts (palette) = ศิลปะ · child (child_care) = พัฒนาการเด็ก (0.2.0). No star glyph: it would read as a rating.
  */
 export const PICTOGRAM_CONTRACT = Object.freeze({
   family: 'LDS Material Symbols Rounded Pictogram',
-  file: 'assets/icons/material-pictogram-300.woff2', bytes: 4264,
-  sha256: '5e61486060c8ae981d800bc610149d5edf523e0318dfe20acc61f08b6edcddc5',
+  file: 'assets/icons/material-pictogram-300.woff2', bytes: 4892,
+  sha256: '0c18b9ac3583748ff54cc3f5370edf47b3c0331b92629a26d3a2748cc65ea060',
   manifest: 'assets/icons/material-pictogram-300.json',
   axes: Object.freeze({FILL: 0, wght: 300, GRAD: 0, opsz: 24}),
   glyphs: Object.freeze({area: '\uE55B', province: '\uE7F1', segment: '\uE72C', ai: '\uE65F', streetview: '\uE56E', maps: '\uE0C8', building: '\uEA40',
     school: '\uE80C', students: '\uF233', teacher: '\uEAF0', classroom: '\uEB4F', level: '\uF1A9', fee: '\uEF63', quality: '\uEF76',
     programme: '\uEA19', history: '\uE8E5', aff: '\uE97A', closed: '\uE615', rail: '\uE570', compare: '\uE915',
     sea: '\uE176', elevation: '\uE564', relief: '\uEA16', forest: '\uEA99',
-    rank: '\uF20C', date: '\uE878', distance: '\uE41C', construction: '\uEA3C', dataset: '\uF20E'}),
-  status: 'test exception to LDS nav-7 (owner 2026-10-22; action and building glyphs 2026-10-29; terrain glyphs 2026-11-01; rank, date, distance, construction and dataset glyphs 2026-11-01 for short copy; school glyphs 2026-11-05)',
+    rank: '\uF20C', date: '\uE878', distance: '\uE41C', construction: '\uEA3C', dataset: '\uF20E',
+    learning: '\uE666', tutor: '\uE745', language: '\uE8E2', arts: '\uE40A', child: '\uEB41'}),
+  status: 'test exception to LDS nav-7 (owner 2026-10-22; action and building glyphs 2026-10-29; terrain glyphs 2026-11-01; rank, date, distance, construction and dataset glyphs 2026-11-01 for short copy; school glyphs 2026-11-05; learning glyphs 2026-11-06)',
   fallback: 'Text labels carry the meaning; pictograms stay hidden until the font has loaded.',
 });
 export const NAV_ICON_CONTRACT = Object.freeze({

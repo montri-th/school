@@ -3,8 +3,8 @@
   "schemaVersion": "1.5.0",
   "documentType": "implementation-plan",
   "productId": "citymeter-school",
-  "productVersion": "0.1.0",
-  "updatedOn": "2026-11-05",
+  "productVersion": "0.2.0",
+  "updatedOn": "2026-11-06",
   "architecture": {
     "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
     "commands": {
@@ -18,7 +18,8 @@
       "handoff:manifest": "node scripts/build-handoff.mjs",
       "handoff:bundle": "node scripts/build-handoff.mjs --zip dist/CityMETER-School-Developer-Handoff.zip",
       "verify:live": "node scripts/verify-live.mjs",
-      "build:units": "python3 -I scripts/adapt-building-units.py --help"
+      "build:units": "python3 -I scripts/adapt-building-units.py --help",
+      "build:learning": "python3 -I scripts/build-learning.py --help"
     },
     "libraries": {
       "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/maplibre-guard.js)",
@@ -27,19 +28,20 @@
     },
     "modules": {
       "js/app.js": "orchestration: row scopes, focus modes, panels, map layers, building camera, URL state",
-      "js/model.js": "decode data/schools.json; measures (students | count), groups, levels, sizes, pin sizes, importance, filters, summaries",
+      "js/model.js": "decode data/schools.json; measures (students | count | learning, countsRecords), groups, levels, sizes, pin sizes, importance, filters, summaries",
       "js/areas.js": "district index, frames, per-district totals (students, records, unknown students)",
       "js/area-insight.js": "the first Aha (home province, top districts, rail comparison, outside finding)",
-      "js/profile-model.js": "overview, district, station, affiliation, building and school models; comparison set; enrolment history",
-      "js/panel.js": "reading panel views as HTML strings (provenance line, no caveat)",
-      "js/charts.js": "district bars, district × group matrix, affiliation bars",
+      "js/profile-model.js": "overview, district, station, affiliation, building and school models; comparison set; enrolment history; the learning models (overview, district, station, building, record) and the learning context of the school views",
+      "js/learning.js": "decode data/learning.json (0.2.0): learning rows with the shared row interface, services, point states, filters (search · province · service), service mix, nearPoint, learningContext",
+      "js/panel.js": "reading panel views as HTML strings (provenance line, no caveat); learning views and the learning sections of the school views",
+      "js/charts.js": "district bars, district × group matrix, affiliation bars; under the learning measure district × service and service bars",
       "js/chart-model.js": "chart models over scopeRows",
-      "js/map-layers.js": "district choropleth (li.supply | count, 41 samples), labels",
+      "js/map-layers.js": "district choropleth (li.supply | count — records and learning records, 41 samples), labels",
       "js/provinces.js": "province frames below zoom 8",
       "js/frames.js": "district outlines per province on demand",
       "js/scales.js": "LDS count and LI li.supply ramps (41 samples by rank)",
       "js/cues.js": "school group → LDS series + shape cue",
-      "js/pins.js": "one symbol per row with a point, area ∝ students; HTML pins from zoom 15.5",
+      "js/pins.js": "one symbol per row with a point, area ∝ students (a learning record at the 200-student size, js/pins.js#sizeValue); HTML pins from zoom 15.5",
       "js/stations.js": "CityMETER · Transit stations and the 500 m radius",
       "js/ask.js": "Google AI / Maps / Street View actions per view",
       "js/breadcrumb.js": "ประเทศไทย › จังหวัด › เขต/อำเภอ with production deep links (?d=school)",
@@ -60,6 +62,7 @@
     },
     "data": [
       "data/schools.json",
+      "data/learning.json",
       "data/area-index.json",
       "data/frames/{CODE}.json",
       "data/provinces.geojson",
@@ -74,7 +77,8 @@
       "level",
       "size",
       "province",
-      "aff"
+      "aff",
+      "service"
     ],
     "queryFields": [
       "metric",
@@ -82,13 +86,15 @@
       "areas",
       "view",
       "school",
+      "learn",
       "station",
       "view3d"
     ],
     "rowScopes": {
       "scopeRows": "rows after search · group · level · size · province · affiliation, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
       "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
-      "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table"
+      "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table",
+      "learning": "under the learning measure the scopes hold the learning rows (search · province · service; the school fields are hidden and cleared)"
     },
     "panelActions": [
       "select-area",
@@ -106,7 +112,8 @@
       "open-charts",
       "open-table",
       "clear-filter",
-      "leave-area"
+      "leave-area",
+      "filter-service"
     ]
   },
   "tasks": [
@@ -252,6 +259,27 @@
         "handoff/VERIFICATION.md"
       ],
       "status": "done"
+    },
+    {
+      "id": "T9",
+      "title": "Learning services (0.2.0): tabs 27–29, the third measure, checked pins, learning context in the school views",
+      "dependsOn": [
+        "T2",
+        "T5"
+      ],
+      "acceptanceCriteria": [
+        "A15"
+      ],
+      "files": [
+        "scripts/build-learning.py",
+        "data/learning.json",
+        "js/learning.js",
+        "js/profile-model.js",
+        "js/panel.js",
+        "js/app.js",
+        "tests/learning.test.js"
+      ],
+      "status": "done"
     }
   ],
   "acceptanceCriteria": [
@@ -338,12 +366,19 @@
       "scenario": "release",
       "expected": "one cache tag, one version, schema-valid handoff, hygiene; live bytes = repository",
       "verificationType": "unit (tests/release.test.js) + npm run verify:live"
+    },
+    {
+      "id": "A15",
+      "scenario": "learning services",
+      "expected": "3,495 rows = 27_LEARNING_SERVICES = 28 in scope + 29 provider-confirmed; no school code; pins only inside the listed district (680); the learning measure never adds to the schools; the learning Aha fixture; one provenance line, no caveat; the school views list the learning records of the district and within 1 km",
+      "verificationType": "unit (tests/learning.test.js) + rendered QA"
     }
   ],
   "developerWorkflow": [
     "edit the research sheet only (never data/)",
     "read the tabs: scripts/export-sheet-tabs.js → scripts/decode-sheet-payload.py",
     "python3 -I scripts/build-data.py … (DATA_METHOD.md §13)",
+    "python3 -I scripts/build-learning.py … (DATA_METHOD.md §13 step 5, §14)",
     "npm test",
     "npm run check:lds -- --lds <base> --li <profile>",
     "bump ?v=YYYYMMDD-rN + package.json + design-intent.json + handoff JSON",
@@ -375,6 +410,11 @@
       "id": "B5",
       "item": "School-age population from a registry dataset, as context beside the students (never a ratio without its denominator)",
       "evidence": "planned"
+    },
+    {
+      "id": "B6",
+      "item": "Learning services: registry points for the 2,588 records without one and checked points for the 227 outside the listed district or unusable; the 277 codes held for review; which records still teach (provider or field check)",
+      "evidence": "research follow-up"
     }
   ]
 }

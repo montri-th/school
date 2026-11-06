@@ -5,6 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {dirname, join} from 'node:path';
 import {decodeDataset, setProvinces} from '../js/model.js';
 import {buildAreaIndex, attachFrames} from '../js/areas.js';
+import {decodeLearning} from '../js/learning.js';
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const cache = new Map();
@@ -26,4 +27,15 @@ export function load({frames = []} = {}) {
   }
   for (const code of frames) attachFrames(loaded.index, readJSON(`data/frames/${code}.json`));
   return loaded;
+}
+
+let learning = null;
+/** The learning-service layer (0.2.0), decoded as the browser does (stations from data/schools.json). */
+export function loadLearning() {
+  if (!learning) {
+    const {data, index} = load();
+    const raw = readJSON('data/learning.json');
+    learning = {learningRaw: raw, learning: decodeLearning(raw, index, new Map(data.stations.map(s => [s.id, s])))};
+  }
+  return {...load(), ...learning};
 }
