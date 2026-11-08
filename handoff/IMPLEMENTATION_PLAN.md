@@ -19,7 +19,7 @@ Static site บน GitHub Pages · ES modules ผ่าน import map (ทุก
 | `js/map-layers.js` · `js/provinces.js` · `js/frames.js` · `js/areas.js` | choropleth เขต/อำเภอ, กรอบจังหวัด, ขอบเขตรายจังหวัด, ดัชนีพื้นที่ |
 | `js/pins.js` · `js/stations.js` · `js/labels.js` | หมุดสถานศึกษา (ขนาดตามนักเรียน), สถานีรถไฟฟ้าและวงรัศมี, ชื่อกลางจอ |
 | `js/ask.js` · `js/breadcrumb.js` · `js/navigation.js` | ปุ่ม Google, เส้นทาง, ไอคอนและวิธีใช้ |
-| `js/massing.js` · `js/camera.js` · `js/venue-xray.js` · `js/building-join.js` · `js/building-units.js` · `js/terrain.js` · `js/maplibre-guard.js` · `js/map-style.js` · `js/mvt.js` · `js/geometry.js` | มวลอาคาร กล้อง มุมมองอาคาร ภูมิประเทศ (สืบทอดจาก Hotel ไม่เปลี่ยนสัญญา) |
+| `js/massing.js` · `js/shell/camera.js` · `js/shell/venue-xray.js` · `js/shell/building-join.js` · `js/shell/building-units.js` · `js/shell/terrain.js` · `js/shell/maplibre-guard.js` · `js/shell/map-style.js` · `js/shell/mvt.js` · `js/shell/geometry.js` | มวลอาคาร กล้อง มุมมองอาคาร ภูมิประเทศ (สืบทอดจาก Hotel ไม่เปลี่ยนสัญญา) |
 
 สคริปต์: `scripts/export-sheet-tabs.js` + `scripts/decode-sheet-payload.py` (อ่านชีต 35 MB ทีละเซลล์) · `scripts/build-data.py` (ข้อมูล + การกระทบยอด) · `scripts/build-learning.py` (เรียนเสริมจากแท็บ 27–29 + การกระทบยอด) · `scripts/fetch-base.py` + `scripts/build-receipts.py` (ใบรับ production) · `scripts/adapt-building-units.py` (หน่วยอาคารจาก Hotel) · `scripts/build-pictogram-font.py` (ไอคอนของโรงเรียน) · `scripts/check-lds-parity.mjs` · `scripts/build-handoff.mjs` · `scripts/verify-live.mjs`
 

@@ -183,7 +183,7 @@ foundation fill.
   100 · 500 · 2,000 คน and the hollow mark.
 - Names near the middle of the view (`js/labels.js`): from zoom 12.5, ranked by importance (§8), at most 9 (phone 5); the
   label drops the leading type word the cue already says (โรงเรียน · รร. · ศพด.); a place inside a school's name stays.
-- Terrain (`js/terrain.js`): as in Hotel — at hilly sites only, ground facts, never a risk.
+- Terrain (`js/shell/terrain.js`): as in Hotel — at hilly sites only, ground facts, never a risk.
 - Buildings per area: the units of the CityMETER · Hotel build (the owner's rule of 2026-11-01, point 3: per อปท., เขต in
   Bangkok; CityMETER Building V4 where its building count is ≥ 1.15 × the OpenStreetMap count of the unit, else OSM),
   copied unchanged by `scripts/adapt-building-units.py` without the per-unit hotel counts. The Hotel build evaluated
