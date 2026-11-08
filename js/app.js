@@ -46,7 +46,9 @@
  * below PROVINCE_FILL_MAX_ZOOM a เขต/อำเภอ of the selected จังหวัด, else a province → เขต/อำเภอ (`area-hit`, every
  * zoom from AREA_MIN_ZOOM). Quiet context dots are never targets.
  * Panel modes: overview (+ affiliation card with a สังกัด filter) | area | station | building | school (with a back
- * stack). URL state: filters, metric, area, areas, view, school, station, view3d.
+ * stack). URL state (own names, inside): filters, metric, area, areas, view, school, station, view3d — written in the shared
+ * grammar d · at · e · m · f.* · focus · view · v3d by citymeter-shell (js/shell/url.js), with a browser history
+ * entry per level (the back button goes up a level).
  */
 import {provinces as provinceList, provinceByCode, provinceCodeFrom, setProvinces, decodeDataset, filterRows, summarize, hasPoint, unitWords, rowValue, SIZE_BANDS, LEVELS, LEVEL_UNKNOWN, gradeRange, pinRadius} from './model.js';
 import {buildAreaIndex, areaWord, areaLocator, recordBounds} from './areas.js';
@@ -76,6 +78,8 @@ import {rampLegendHTML} from './scales.js';
 import {cueMarkup} from './cues.js';
 import {installSchoolLabels} from './labels.js';
 import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './terrain.js';
+import {createCodec, createNavigator} from './shell/url.js';
+import {pageTitle} from './shell/title.js';
 
 const $ = id => document.getElementById(id);
 /** Filters of the school measures; the learning measure (0.2.0) has its own: search · province · service. */
@@ -107,6 +111,17 @@ const state = {
   // Building camera: the x-ray solid, what was framed last ({id, key, refits}) and whether the user moved the map since.
   xray: null, framed: null, userCamera: false,
 };
+
+/* ---------- address (citymeter-shell, js/shell/url.js) ---------- */
+// The page keeps its own parameter names inside (saveURL / restoreFromURL); the shell writes them in the shared
+// grammar d · at · e · m · f.* · focus · view · v3d, and opening an area or an item adds one browser history entry,
+// so the back button goes up a level. Old links (?area=, ?school= …) still open and are rewritten.
+// The `e` kinds are provisional until the dataset registry declares them.
+const nav = createNavigator(createCodec({
+  dataset: 'school', levels: ['P', 'D'], place: {province: 'province', D: 'area'},
+  items: {school: 'school', learn: 'learn', station: 'station'}, filters: FIELDS,
+  provinceOf: code => state.index?.byId.get(code)?.province || '',
+}), {onPop: restoreFromHistory});
 
 /* ---------- helpers ---------- */
 /** The filter values that apply under a measure (the other measure's filters keep their value but do not apply). */
@@ -151,7 +166,8 @@ function saveURL() {
   if (state.panel.mode === 'school' && state.panel.id) p.set(isLearning(rowById(state.panel.id)) ? 'learn' : 'school', state.panel.id);
   if (state.panel.mode === 'station' && state.panel.id) p.set('station', state.panel.id);
   if (!state.view3d) p.set('view3d', '0');
-  history.replaceState(null, '', location.pathname + (p.size ? '?' + p : ''));
+  // A building view has no address of its own: the address stays on what it was opened from.
+  if (state.panel.mode !== 'building') nav.commit(p);
 }
 
 /* ---------- theme ---------- */
@@ -337,9 +353,11 @@ function renderCrumbs() {
     crumbs = buildBreadcrumb({province: $('province').value, area: state.selectedArea ? areaById(state.selectedArea) : null});
   }
   $('crumbs').innerHTML = renderBreadcrumb(crumbs);
+  // Tab title: what the view shows, then the product, ≤ 60 characters (LDS FAVICON-01, js/shell/title.js).
   const st = mode === 'station' ? stationById(id) : null;
-  const title = mode === 'school' ? `${rowById(id)?.name || rowById(id)?.nameEn || ''} · ` : mode === 'building' ? 'อาคาร · ' : st ? `สถานี${st.name} · ` : '';
-  document.title = `${title}${breadcrumbText(crumbs)} · School · CityMETER`;
+  const place = crumbs[crumbs.length - 1].label;
+  document.title = pageTitle(mode === 'school' ? rowById(id)?.name || rowById(id)?.nameEn || place
+    : mode === 'building' ? `อาคาร ${place}` : st ? `สถานี${st.name}` : `${unit().subject} ${place}`);
   return crumbs;
 }
 
@@ -465,6 +483,8 @@ function pushHistory() {
 }
 
 function goBack() {
+  // Every level change is a browser history entry (citymeter-shell): go up the way the browser's button does.
+  if (state.panel.mode !== 'building' && nav.canGoBack()) { nav.back(); return; }
   const previous = state.history.pop();
   if (!previous) { state.selectedArea = ''; state.panel = overviewPanel(); update({fit: true}); return; }
   // Leaving or reaching a building or station view always moves the camera.
@@ -1846,7 +1866,7 @@ function refreshOptionCounts() {
 }
 
 function restoreFromURL() {
-  const p = new URLSearchParams(location.search);
+  const p = nav.read();
   for (const f of FIELDS) if (p.has(f)) { const v = f === 'province' ? provinceCodeFrom(p.get(f)) : p.get(f); if (f === 'search' || [...($(f).options || [])].some(o => o.value === v)) $(f).value = v; }
   if (['areas', 'mix', 'affs'].includes(p.get('view'))) state.view = p.get('view');
   if (p.get('metric') === 'count') state.metric = 'count';
@@ -1866,6 +1886,15 @@ function restoreFromURL() {
   const learn = p.get('learn') && rowById(p.get('learn'));
   if (learn && isLearning(learn)) { state.metric = 'learning'; state.panel = {mode: 'school', id: learn.id}; }
   if (state.panel.mode === 'school' && learningOn() !== isLearning(rowById(state.panel.id))) state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea} : overviewPanel();
+}
+
+/** Browser back / forward (citymeter-shell): show the level the restored address names. */
+function restoreFromHistory() {
+  for (const f of FIELDS) $(f).value = '';
+  Object.assign(state, {view: 'areas', metric: 'students', selectedArea: '', focusAreaIds: [], autoFocus: true, panel: overviewPanel(), history: [], buildingSel: null});
+  restoreFromURL();
+  $('toggle-3d').setAttribute('aria-pressed', String(state.view3d));
+  update({fit: true});
 }
 
 function wireEvents() {
