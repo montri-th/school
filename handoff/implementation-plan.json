@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "implementation-plan",
   "productId": "citymeter-school",
-  "productVersion": "0.3.1",
+  "productVersion": "0.4.0",
   "updatedOn": "2026-11-06",
   "architecture": {
     "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
@@ -55,7 +55,7 @@
       "js/shell/geometry.js": "rounding and enclosure of footprints",
       "js/navigation.js": "nav-7 and pictogram font contracts, help dialog",
       "js/shell/vendors.js": "pinned MapLibre loader",
-      "js/launch.js": "classic launch script (loading, errors, file:// bridge to the public site)",
+      "js/shell/launch.js": "classic launch script (loading, errors, file:// bridge to the public site)",
       "js/labels.js": "names near the middle of the view (importance = students + published tuition percentiles), short names, hover card of icon chips",
       "js/shell/terrain.js": "terrain mode at hilly sites and round a building or school; the terrain facts of a school",
       "js/shell/building-units.js": "buildings per area: the per-province unit files (data/building-units/), CityMETER zones, production tile URLs and the attribution"
