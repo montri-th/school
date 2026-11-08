@@ -573,7 +573,7 @@ export function renderSchool(d, ctx = {}) {
       opec: Boolean(r.url || d.history), onesqa: Boolean(r.quality), fees: Boolean(r.fee), learn: Boolean(d.learning?.count || d.learning?.nearCount)})}`;
 }
 
-/** Terrain chips (js/terrain.js#terrainChips) as fact chips; '' when nothing is known. */
+/** Terrain chips (js/shell/terrain.js#terrainChips) as fact chips; '' when nothing is known. */
 export function terrainChipsHTML(chips) {
   return chips.map(c => `<span class="fact-chip" title="${esc(c.title)}">${pic(c.kind)}${esc(c.text)}</span>`).join('');
 }

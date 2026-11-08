@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "implementation-plan",
   "productId": "citymeter-school",
-  "productVersion": "0.3.0",
+  "productVersion": "0.3.1",
   "updatedOn": "2026-11-06",
   "architecture": {
     "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
@@ -22,7 +22,7 @@
       "build:learning": "python3 -I scripts/build-learning.py --help"
     },
     "libraries": {
-      "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/maplibre-guard.js)",
+      "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/shell/maplibre-guard.js)",
       "earcut": "js/vendor/earcut.js (ISC)",
       "tiles": "OpenFreeMap planet (OpenMapTiles schema)"
     },
@@ -45,20 +45,20 @@
       "js/stations.js": "CityMETER · Transit stations and the 500 m radius",
       "js/ask.js": "Google AI / Maps / Street View actions per view",
       "js/breadcrumb.js": "ประเทศไทย › จังหวัด › เขต/อำเภอ with production deep links (?d=school)",
-      "js/building-join.js": "display-time point-in-footprint join; nearest drawn building for the camera",
+      "js/shell/building-join.js": "display-time point-in-footprint join; nearest drawn building for the camera",
       "js/massing.js": "city and focus massing tiers; CityMETER Building V4 inside CityMETER units (shapeCmTile, planCmRequests), OSM parts override, context layer, credit",
-      "js/camera.js": "presets, pitched fits and the building camera (terrain-aware: groundAt, projectAltitude)",
-      "js/venue-xray.js": "the building being looked at drawn over every other building",
-      "js/map-style.js": "basemap generated from theme tokens",
-      "js/maplibre-guard.js": "MapLibre 5.6.2 tile-cover and elevation-freeze guards",
-      "js/mvt.js": "vector tile decoding for the focus tier",
-      "js/geometry.js": "rounding and enclosure of footprints",
+      "js/shell/camera.js": "presets, pitched fits and the building camera (terrain-aware: groundAt, projectAltitude)",
+      "js/shell/venue-xray.js": "the building being looked at drawn over every other building",
+      "js/shell/map-style.js": "basemap generated from theme tokens",
+      "js/shell/maplibre-guard.js": "MapLibre 5.6.2 tile-cover and elevation-freeze guards",
+      "js/shell/mvt.js": "vector tile decoding for the focus tier",
+      "js/shell/geometry.js": "rounding and enclosure of footprints",
       "js/navigation.js": "nav-7 and pictogram font contracts, help dialog",
-      "js/vendors.js": "pinned MapLibre loader",
+      "js/shell/vendors.js": "pinned MapLibre loader",
       "js/launch.js": "classic launch script (loading, errors, file:// bridge to the public site)",
       "js/labels.js": "names near the middle of the view (importance = students + published tuition percentiles), short names, hover card of icon chips",
-      "js/terrain.js": "terrain mode at hilly sites and round a building or school; the terrain facts of a school",
-      "js/building-units.js": "buildings per area: the per-province unit files (data/building-units/), CityMETER zones, production tile URLs and the attribution"
+      "js/shell/terrain.js": "terrain mode at hilly sites and round a building or school; the terrain facts of a school",
+      "js/shell/building-units.js": "buildings per area: the per-province unit files (data/building-units/), CityMETER zones, production tile URLs and the attribution"
     },
     "data": [
       "data/schools.json",
