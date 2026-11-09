@@ -15,7 +15,11 @@
  *
  * Pure: builds labels and https URLs from public names only (no user data, no internal ids). The Google names on the
  * buttons say where the answers come from (owner 2026-11-01: no caveat lines).
+ * An English page (citymeter-shell 0.5.x) asks in English, with the English names the data gives (js/lang.js); the
+ * button labels are translated by js/shell/i18n.js like the rest of the page.
  */
+import {LANG, englishName, translate} from './shell/i18n.js';
+
 const enc = encodeURIComponent;
 export const googleAskURL = q => `https://www.google.com/search?q=${enc(q)}`;
 export const mapsSearchURL = q => `https://www.google.com/maps/search/?api=1&query=${enc(q)}`;
@@ -30,7 +34,8 @@ const join = (...parts) => clean(parts.filter(Boolean).join(' '));
  *       province?, point?: {lat, lon, role}, rows?}
  * → [{id, label, href, note}] in display order (only the actions that apply).
  */
-export function contextActions(ctx = {}) {
+export function contextActions(ctx = {}, lang = LANG) {
+  if (lang === 'en') return contextActionsEnglish(ctx);
   const out = [], place = ctx.area ? join(ctx.area.place, ctx.area.province) : '';
   const add = (id, label, href, note = '') => { if (href) out.push({id, label, href, note}); };
   if (ctx.kind === 'school' && ctx.row) {
@@ -71,6 +76,52 @@ export function contextActions(ctx = {}) {
   if (p && Number.isFinite(p.lat) && Number.isFinite(p.lon)) {
     add('streetview', p.role === 'station' ? 'Street View ใกล้สถานี' : 'Street View', streetViewURL(p.lat, p.lon));
   }
+  return out;
+}
+
+/** The same actions for an English page: English questions, English names where the data has them. */
+function contextActionsEnglish(ctx = {}) {
+  // N: a name (the data's English, else as given); T: a word of the dictionary (an affiliation, a line), else as given.
+  const out = [], N = s => englishName(clean(s)), T = s => translate(clean(s)) ?? clean(s);
+  const add = (id, label, href) => { if (href) out.push({id, label, href, note: ''}); };
+  const where = ctx.area ? [N(ctx.area.place), N(ctx.area.province)].filter(Boolean).join(', ') : '';
+  const lines = s => (s.lines || []).map(T).join(', ');
+  if (ctx.kind === 'school' && ctx.row) {
+    const r = ctx.row, name = N(r.name || r.nameEn);
+    add('ai', 'ถาม Google AI', googleAskURL(`${name}${where ? ` (${where})` : ''}: which grades does it take, what are the fees this year, what do recent results and reviews say, and how do I get there?`));
+    add('maps', 'Google Maps', mapsSearchURL(join(name, N(ctx.area?.place), N(ctx.area?.province))));
+  } else if (ctx.kind === 'building') {
+    const names = [...new Set((ctx.rows || []).map(r => N(r.name || r.nameEn)).filter(Boolean))].slice(0, 2);
+    add('ai', 'ถาม Google AI', googleAskURL(`Are ${names.join(' and ')}${where ? ` (${where})` : ''} on the same site, and what else is around them?`));
+  } else if (ctx.kind === 'area' && ctx.area) {
+    add('ai', 'ถาม Google AI', googleAskURL(`Schools in ${where}: which public, private and international schools are there, what are the fees, and which neighbourhoods are easy to reach or near rail?`));
+    add('maps', 'Google Maps', mapsSearchURL(`school ${where}`));
+  } else if (ctx.kind === 'station' && ctx.station) {
+    const s = ctx.station, station = N(s.name), line = lines(s);
+    add('ai', 'ถาม Google AI', googleAskURL(`Schools near ${station} station${line ? ` (${line})` : ''}: where are they, how many minutes' walk, and what are the fees and reviews?`));
+    add('maps', 'Google Maps', mapsSearchURL(`school near ${station} station`));
+  } else if (ctx.kind === 'aff' && ctx.aff) {
+    add('ai', 'ถาม Google AI', googleAskURL(`${T(ctx.aff.th)} (Thailand): how many schools and students does it have, and what are its latest policies or news?`));
+  } else if (ctx.kind === 'learning' && ctx.row) {
+    const r = ctx.row, name = N(r.name || r.nameEn);
+    add('ai', 'ถาม Google AI', googleAskURL(`${name}${where ? ` (${where})` : ''}: what does it teach, which courses are open, what are the fees, what do reviews say, and is it still open?`));
+    add('maps', 'Google Maps', mapsSearchURL(join(name, N(ctx.area?.place), N(ctx.area?.province))));
+  } else if (ctx.kind === 'learning-area' && ctx.area) {
+    add('ai', 'ถาม Google AI', googleAskURL(`Tutoring, language and arts schools in ${where}: where are they, what are the fees, and which neighbourhoods are easy to reach?`));
+    add('maps', 'Google Maps', mapsSearchURL(`tutoring ${where}`));
+  } else if (ctx.kind === 'learning-station' && ctx.station) {
+    const station = N(ctx.station.name);
+    add('ai', 'ถาม Google AI', googleAskURL(`Tutoring or language schools near ${station} station: where are they, how many minutes' walk, and what are the fees?`));
+    add('maps', 'Google Maps', mapsSearchURL(`tutoring near ${station} station`));
+  } else if (ctx.kind === 'learning-overview') {
+    const place = N(ctx.province) || 'Thailand';
+    add('ai', 'ถาม Google AI', googleAskURL(`Latest overview of tutoring, language and arts schools in ${place}: where do they cluster, and which have opened or closed?`));
+  } else if (ctx.kind === 'overview') {
+    const place = N(ctx.province) || 'Thailand';
+    add('ai', 'ถาม Google AI', googleAskURL(`Latest overview of students and schools in ${place}: are student numbers falling or rising, and where have schools opened or closed?`));
+  }
+  const p = ctx.point;
+  if (p && Number.isFinite(p.lat) && Number.isFinite(p.lon)) add('streetview', p.role === 'station' ? 'Street View ใกล้สถานี' : 'Street View', streetViewURL(p.lat, p.lon));
   return out;
 }
 

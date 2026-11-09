@@ -15,6 +15,8 @@
  * panel. No logos: the roster carries none.
  */
 import {cueMarkup} from './cues.js';
+import {LANG} from './shell/i18n.js';
+import {thaiSubName} from './lang.js';
 import {gradeRange} from './model.js';
 import {terrainFacts, terrainChips} from './shell/terrain.js';
 import {isLearning, SERVICE_PICTOGRAM} from './learning.js';
@@ -26,6 +28,7 @@ const GAP = 6;
 
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const known = r => Number.isFinite(r?.students) && r.students > 0;
+const THAI = /[\u0E01-\u0E3A\u0E40-\u0E4E]/;
 const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
 
 /** Pure: importance first (students + published tuition), then nearer the centre, then id (stable). */
@@ -41,7 +44,8 @@ const TYPE_WORDS = /^(โรงเรียน|ร\.?ร\.|ศพด\.|ศูน
  * stays. The full name stays in the accessible name and the card. Never shorter than 3 characters.
  */
 export function shortName(row) {
-  let original = String(row.name || row.nameEn || '').trim();
+  // An English page reads the English name (a name without one stays Thai, js/lang.js).
+  let original = String((LANG === 'en' ? row.nameEn || row.name : row.name || row.nameEn) || '').trim();
   if (/^[(（[].*[)）\]]$/.test(original)) original = original.slice(1, -1).trim();
   let name = original;
   for (let i = 0; i < 2; i++) name = name.replace(TYPE_WORDS, '');
@@ -121,12 +125,14 @@ export function installSchoolLabels(map, container, {onSelect, bounds, avoid = (
     el.className = 'school-label';
     el.dataset.id = row.id;
     const parts = labelParts(row);
+    // A label is a name: an English page leaves it as the data gives it (marked Thai when it is).
+    const named = v => (LANG === 'en' ? ` translate="no"${THAI.test(v) ? ' lang="th"' : ''}` : '');
     const said = isLearning(row) ? `เรียนเสริม · ${(row.serviceNames || []).join(' · ')}` : known(row) ? `${num(row.students)} คน` : 'ไม่ทราบจำนวนนักเรียน';
     el.setAttribute('aria-label', [row.name || row.nameEn, said, gradeRange(row)].filter(Boolean).join(' · '));
     const tail = parts.services.length
       ? `<span class="hl-services" aria-hidden="true">${parts.services.map(s => `<i class="pictogram pic-${esc(SERVICE_PICTOGRAM[s] || 'learning')}"></i>`).join('')}</span>`
       : parts.students ? `<span class="hl-students data-number"><i class="pictogram pic-students" aria-hidden="true"></i>${esc(num(parts.students))}</span>` : '';
-    el.innerHTML = `<span class="hl-cue" aria-hidden="true">${cueMarkup(row.series)}</span><span class="hl-text"><span class="hl-name">${esc(parts.site)}</span></span>${tail}`;
+    el.innerHTML = `<span class="hl-cue" aria-hidden="true">${cueMarkup(row.series)}</span><span class="hl-text"><span class="hl-name"${named(parts.site)}>${esc(parts.site)}</span></span>${tail}`;
     el.onclick = () => onSelect?.(row);
     el.onmouseenter = () => { if (finePointer()) showCard(row, el); };
     el.onmouseleave = () => hideCard(row);
@@ -226,7 +232,8 @@ export function installSchoolLabels(map, container, {onSelect, bounds, avoid = (
       row.aff ? chip('aff', row.aff.short, row.aff.th) : '',
       row.fee ? chip('fee', `${feeText(row.fee)}/ปี`, `ค่าเรียนต่อคนต่อปี ปีการศึกษา ${row.fee.year}`) : '',
     ].filter(Boolean).join('');
-    card.innerHTML = `<div class="hc-head"><div><strong>${esc(row.name || row.nameEn)}</strong>${row.nameEn && row.name ? `<span class="hc-sub">${esc(row.nameEn)}</span>` : ''}</div></div>
+    const thai = thaiSubName(row), sub = LANG === 'en' ? thai : row.nameEn && row.name ? row.nameEn : '';
+    card.innerHTML = `<div class="hc-head"><div><strong>${esc(row.name || row.nameEn)}</strong>${sub ? `<span class="hc-sub"${thai ? ' lang="th" translate="no"' : ''}>${esc(sub)}</span>` : ''}</div></div>
       <div class="hc-chips">${chips}</div><div class="hc-chips hc-terrain" aria-live="off"></div>`;
     card.hidden = false;
     placeCard();
