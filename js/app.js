@@ -50,6 +50,7 @@
  * grammar d · at · e · m · f.* · focus · view · v3d by citymeter-shell (js/shell/url.js), with a browser history
  * entry per level (the back button goes up a level).
  */
+import {registerDataNames} from './lang.js';
 import {provinces as provinceList, provinceByCode, provinceCodeFrom, setProvinces, decodeDataset, filterRows, summarize, hasPoint, unitWords, rowValue, SIZE_BANDS, LEVELS, LEVEL_UNKNOWN, gradeRange, pinRadius} from './model.js';
 import {buildAreaIndex, areaWord, areaLocator, recordBounds} from './areas.js';
 import {summarizeAreaInsight, filterAreaRows} from './area-insight.js';
@@ -1985,6 +1986,7 @@ async function init() {
     try { if (learningJSON) state.learning = decodeLearning(learningJSON, state.index, state.stationById); }
     catch (e) { console.warn('Learning records invalid', e); }
     if (state.learning.dropped) console.warn('Learning records outside the area index', state.learning.dropped);
+    registerDataNames({index: state.index, data: state.data, learning: state.learning});
     document.querySelector('[data-metric="learning"]').hidden = !state.learning.rows.length;
     state.rowById = new Map([...state.data.rows, ...state.learning.rows].map(r => [r.id, r]));
     state.frames = createFrameStore({index: state.index, fetchJSON, version: RELEASE, onLoad: onFramesLoaded,

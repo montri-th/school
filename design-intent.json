@@ -1,6 +1,6 @@
 {
   "artifact": "CityMETER School — 3D-first, district-first map of recorded students and school records across Thailand, with school groups and affiliations, grades, published tuition, ONESQA results, rail context from the same registry, a comparison set per school and, on the third measure, the learning services of the OPEC nonformal register (0.2.0)",
-  "productVersion": "0.4.6",
+  "productVersion": "0.5.0",
   "updatedOn": "2026-11-06",
   "ldsVersion": "0.9.7",
   "release": "v0.9.7-owner.1",

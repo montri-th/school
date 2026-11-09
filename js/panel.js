@@ -20,6 +20,8 @@
  * A school's pin inside a drawn building is “สถานศึกษาในอาคารนี้” / “อีก N แห่งในอาคารนี้”, never “ตั้งอยู่ใน”. Sources,
  * methods and ids sit in one closed <details>.
  */
+import {LANG} from './shell/i18n.js';
+import {thaiSubName} from './lang.js';
 import {productionLink, provinceByCode, hasPoint, stationLink, SIZE_BANDS, LEVELS, gradeRange} from './model.js';
 import {areaWord} from './areas.js';
 import {cueMarkup} from './cues.js';
@@ -47,8 +49,12 @@ export function link(url, label, cls = 'source-link') {
   return u ? `<a class="${cls}" href="${esc(u)}" target="_blank" rel="noopener">${esc(label)}</a>` : '';
 }
 
-/** The line under a school's name: its English name when it has one. */
+/** The line under a school's name: its English name when it has one; on an English page, its Thai name (js/lang.js). */
 export function subLine(r, cls, tag = 'p') {
+  if (LANG === 'en') {
+    const thai = thaiSubName(r);
+    return thai ? `<${tag} class="${cls}" lang="th" translate="no">${esc(thai)}</${tag}>` : '';
+  }
   return r?.nameEn ? `<${tag} class="${cls}">${esc(r.nameEn)}</${tag}>` : '';
 }
 
@@ -380,7 +386,7 @@ export function renderArea(p, classOf, ctx = {}) {
   const head = `<section class="detail-head">
       <button type="button" class="btn quiet back" data-action="back">กลับ</button>
       <p class="eyebrow">${esc(w.area)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(a.province)}">${esc(prov)}</button></p>
-      <h2>${esc(place)}</h2>${a.nameEn ? `<p class="subtle">${esc(a.nameEn)}</p>` : ''}
+      <h2>${esc(place)}</h2>${a.nameEn ? (LANG === 'en' ? `<p class="subtle" lang="th" translate="no">${esc(place)}</p>` : `<p class="subtle">${esc(a.nameEn)}</p>`) : ''}
       ${rank}
       <div class="metrics compact">${studentsTile(p.students, p.count)}${metricTile(p.count, 'แห่ง', 'school')}${metricTile(share, `ของ${prov}`, 'province', shareDetail)}${metricTile(railShare, 'ใกล้รถไฟฟ้า', 'rail', p.rail?.base ? railDetail(p.rail, unit) : '')}</div>
       ${selectionNote(p, place, ctx)}
@@ -413,7 +419,7 @@ export function renderStation(p, ctx = {}) {
       <button type="button" class="btn quiet back" data-action="back">กลับ</button>
       <div class="identity">${pic('rail', 'identity-pic')}<div>
         <p class="eyebrow">สถานีรถไฟฟ้า${s.lines?.length ? ` · ${esc(s.lines.join(' · '))}` : ''}${building ? ` · ${pic('construction')}กำลังสร้าง` : ''}</p>
-        <h2>สถานี${esc(s.name)}</h2>${s.nameEn ? `<p class="subtle">${esc(s.nameEn)}</p>` : ''}</div></div>
+        <h2>สถานี${esc(s.name)}</h2>${s.nameEn ? (LANG === 'en' ? `<p class="subtle" lang="th" translate="no">สถานี${esc(s.name)}</p>` : `<p class="subtle">${esc(s.nameEn)}</p>`) : ''}</div></div>
       <div class="metrics compact">${studentsTile(p.students, p.count)}${metricTile(p.count, 'แห่ง', 'school')}${metricTile(p.radius, 'ม. รอบสถานี', 'distance', `ระยะตรงจากจุดอ้างอิงของสถานี ${meters(p.radius)}`)}</div>
       ${actionBar({kind: 'station', station: s, point: {lat: s.lat, lon: s.lon, role: 'station'}})}
       <div class="detail-actions">${link(stationLink(s), 'ดูใน CityMETER Transit', 'btn quiet source-link')}</div>
@@ -524,7 +530,7 @@ export function renderSchool(d, ctx = {}) {
   const studentsChip = `<span class="fact-chip"${size ? ` title="นักเรียน · ขนาด ${esc(size.th)}"` : ''}>${pic('students')}${esc(studentsText(r))}</span>`;
   const grades = gradeRange(r);
   const gradeChip = grades ? `<span class="fact-chip" title="ระดับชั้นที่เปิดสอน">${pic('level')}${esc(grades)}</span>` : '';
-  const teacherChip = r.teachers ? `<span class="fact-chip" title="ครู">${pic('teacher')}ครู ${nw(`${num(r.teachers)} คน`)}</span>` : '';
+  const teacherChip = r.teachers ? `<span class="fact-chip" title="ครู">${pic('teacher')}${nw(`ครู ${num(r.teachers)} คน`)}</span>` : '';
   const roomChip = r.classrooms ? `<span class="fact-chip" title="ห้องเรียน">${pic('classroom')}${nw(`${num(r.classrooms)} ห้องเรียน`)}</span>` : '';
   const feeChip = r.fee ? `<span class="fact-chip" title="ค่าเรียนต่อคนต่อปี ปีการศึกษา ${esc(r.fee.year)}">${pic('fee')}${esc(feeText(r.fee))}/ปี</span>` : '';
   const affChip = r.aff ? `<button type="button" class="fact-chip" data-action="filter-aff" data-value="${esc(r.aff.id)}" title="${esc(r.aff.th)} (ดูทุกสถานศึกษาของสังกัดนี้)">${pic('aff')}${esc(r.aff.short)}</button>` : '';
@@ -686,7 +692,7 @@ export function renderLearningArea(p, classOf, ctx = {}) {
   const head = `<section class="detail-head">
       <button type="button" class="btn quiet back" data-action="back">กลับ</button>
       <p class="eyebrow">${esc(w.area)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(a.province)}">${esc(prov)}</button></p>
-      <h2>${esc(place)}</h2>${a.nameEn ? `<p class="subtle">${esc(a.nameEn)}</p>` : ''}
+      <h2>${esc(place)}</h2>${a.nameEn ? (LANG === 'en' ? `<p class="subtle" lang="th" translate="no">${esc(place)}</p>` : `<p class="subtle">${esc(a.nameEn)}</p>`) : ''}
       ${rank}
       <div class="metrics compact">${metricTile(p.count, 'แห่ง', 'learning')}${metricTile(p.points, 'มีหมุด', 'maps', `${num(p.points)} จาก ${num(p.count)} แห่งมีพิกัดในเขต/อำเภอนี้ตามทะเบียน`)}${metricTile(share, `ของ${prov}`, 'province', shareDetail)}${metricTile(p.rail?.base ? pct(p.rail.within, p.rail.base) : '—', 'ใกล้รถไฟฟ้า', 'rail', p.rail?.base ? railDetail(p.rail, unit) : '')}</div>
       ${p.coverageState === 'measured_zero' ? `<div class="empty-note" role="note"><strong>ไม่พบสถานที่เรียนเสริมใน${esc(place)}${ctx.filtered ? 'ตามตัวกรองนี้' : ''}</strong>${p.scopeCount ? `<span>พบในพื้นที่อื่น <strong class="data-number">${num(p.scopeCount)}</strong> แห่ง</span><button type="button" class="btn quiet" data-action="leave-area">ดูพื้นที่ที่พบ</button>` : ''}</div>` : ''}
@@ -712,7 +718,7 @@ export function renderLearningStation(p, ctx = {}) {
       <button type="button" class="btn quiet back" data-action="back">กลับ</button>
       <div class="identity">${pic('rail', 'identity-pic')}<div>
         <p class="eyebrow">สถานีรถไฟฟ้า${s.lines?.length ? ` · ${esc(s.lines.join(' · '))}` : ''}${building ? ` · ${pic('construction')}กำลังสร้าง` : ''}</p>
-        <h2>สถานี${esc(s.name)}</h2>${s.nameEn ? `<p class="subtle">${esc(s.nameEn)}</p>` : ''}</div></div>
+        <h2>สถานี${esc(s.name)}</h2>${s.nameEn ? (LANG === 'en' ? `<p class="subtle" lang="th" translate="no">สถานี${esc(s.name)}</p>` : `<p class="subtle">${esc(s.nameEn)}</p>`) : ''}</div></div>
       <div class="metrics compact">${metricTile(p.count, 'แห่ง', 'learning')}${metricTile(p.radius, 'ม. รอบสถานี', 'distance', `ระยะตรงจากจุดอ้างอิงของสถานี ${meters(p.radius)}`)}</div>
       ${actionBar({kind: 'learning-station', station: s, point: {lat: s.lat, lon: s.lon, role: 'station'}})}
       <div class="detail-actions">${link(stationLink(s), 'ดูใน CityMETER Transit', 'btn quiet source-link')}</div>

@@ -61,4 +61,4 @@ npm run verify:live                                            # ไฟล์บ
 
 ## สิทธิ์และที่มา
 
-แผนที่ © OpenStreetMap contributors ผ่าน OpenFreeMap / OpenMapTiles · ขอบเขตปกครองและอาคาร CityMETER (Building V4 ในพื้นที่ที่ใช้) · ไอคอน Material Symbols (Apache-2.0) · ข้อมูลสถานศึกษาตามแหล่งที่ระบุในแต่ละรายการ (CityMETER School 2569, สช., สมศ., ประกาศของโรงเรียน, ทะเบียนโรงเรียนนอกระบบ สช.) — ชุดข้อมูลนี้เป็นงานวิจัย ไม่ใช่สำมะโนโรงเรียนที่เปิดสอน
+แผนที่ © OpenStreetMap contributors ผ่าน OpenFreeMap / OpenMapTiles · ขอบเขตปกครองและอาคาร CityMETER (Building V4 ในพื้นที่ที่ใช้) · ชื่ออังกฤษของเขต/อำเภอ OpenGISData-Thailand (CC BY 4.0, อ้าง DOPA) · ไอคอน Material Symbols (Apache-2.0) · ข้อมูลสถานศึกษาตามแหล่งที่ระบุในแต่ละรายการ (CityMETER School 2569, สช., สมศ., ประกาศของโรงเรียน, ทะเบียนโรงเรียนนอกระบบ สช.) — ชุดข้อมูลนี้เป็นงานวิจัย ไม่ใช่สำมะโนโรงเรียนที่เปิดสอน
