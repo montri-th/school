@@ -611,7 +611,7 @@ def main():
     checked = sorted({iso(r['checked_on']) for r, _ in rows_in if iso(r['checked_on'])})
     meta = {
         'dataset': 'CityMETER School', 'datasetTh': 'โรงเรียนและสถานศึกษาในประเทศไทย', 'registryId': 'research.TH.school',
-        'registryRole': 'Location · TH', 'productDataset': 'school', 'sheetTitle': SHEET_TITLE, 'sheetStatus': 'research_master',
+        'registryRole': 'Living · TH', 'productDataset': 'school', 'sheetTitle': SHEET_TITLE, 'sheetStatus': 'research_master',
         'sheetModified': a.sheet_modified, 'readOn': a.read_on,
         'readMethod': "the sheet's HTML view read cell by cell in the owner's browser (scripts/export-sheet-tabs.js); SHA-256 of each tab's rows as canonical JSON",
         'tabs': tab_shas, 'checkedOn': checked[-1] if checked else '', 'sourceYear': 2026,

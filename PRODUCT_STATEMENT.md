@@ -6,7 +6,7 @@ Winning strategy ของชุดข้อมูลนี้ เขียน�
 
 | รายการ | รายละเอียด |
 |---|---|
-| Parent product | CityMETER (City Intelligence Base Layer ของ Landometer) · แกน Location (ทะเบียนกลาง `research.TH.school` / Location / TH) · production dataset code `school` (`https://landometer.com/v3/citymeter?d=school`) |
+| Parent product | CityMETER (City Intelligence Base Layer ของ Landometer) · แกน Living (ทะเบียนกลาง `research.TH.school` / Living / TH; เจ้าของย้ายจาก Location เมื่อ 12 พ.ย. 2569) · production dataset code `school` (`https://landometer.com/v3/citymeter?d=school`) |
 | Feature / dataset | School — สถานศึกษาและนักเรียนที่ทะเบียนบันทึก ทั่วประเทศไทย ระดับเขต/อำเภอ พร้อมสังกัด ระดับชั้น ค่าเรียนตามประกาศ ผลประเมิน สมศ. บริบทรถไฟฟ้า และคู่เทียบรอบ 2 กม. |
 | รุ่นเอกสาร | 0.2.0 · 6 พฤศจิกายน 2569 (0.1.0 · 5 พ.ย. 2569) |
 | สถานะ | Public demo รุ่น 0.2.0 บน GitHub Pages (`https://montri-th.github.io/school/`); ชุดข้อมูลเป็น research master ไม่ใช่สำมะโนโรงเรียนที่เปิดสอนอยู่ |
