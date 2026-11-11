@@ -12,6 +12,15 @@ test('the page asks search engines not to index it, with no signal that contradi
   assert.ok(!existsSync(new URL('../sitemap.xml', import.meta.url)), 'a noindex demo has no sitemap');
 });
 
-test('the group label follows the dataset registry: LOCATION', () => {
-  assert.deepEqual(html.match(/CITYMETER · (LAND|LOCATION|LIVING)</g), ['CITYMETER · LOCATION<']);
+// The registry read on 2026-11-12: the owner moved this dataset from Location to Living that day
+// (registry change CHANGE-LIVING-HEALTH-EDUCATION-20261112-01; it read LOCATION on 2026-11-08).
+test('the group label follows the dataset registry: LIVING', () => {
+  assert.deepEqual(html.match(/CITYMETER · (LAND|LOCATION|LIVING)</g), ['CITYMETER · LIVING<']);
+});
+
+test('the data file and its builder name the same registry group as the page', () => {
+  const meta = JSON.parse(readFileSync(new URL('../data/schools.json', import.meta.url), 'utf8')).meta;
+  assert.equal(meta.registryId, 'research.TH.school');
+  assert.equal(meta.registryRole, 'Living · TH');
+  assert.match(readFileSync(new URL('../scripts/build-data.py', import.meta.url), 'utf8'), /'registryRole': 'Living · TH'/);
 });
