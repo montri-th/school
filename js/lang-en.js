@@ -192,6 +192,7 @@ export default {
     'ไม่ระบุ': 'Not stated',
     // Filters
     'ค้นหาโรงเรียน สังกัด หรือพื้นที่': 'Search schools, affiliations or areas',
+    'ลองชื่อโรงเรียน สังกัด สถานี เขต/อำเภอ หรือจังหวัด': 'Try the name of a school, an affiliation, a station, a district or a province',
     'ค้นหาสถานที่เรียนเสริม บริการ หรือพื้นที่': 'Search learning centres, services or areas',
     'ค้นหาชื่อโรงเรียน สังกัด เขต/อำเภอ หรือจังหวัด': 'Search school names, affiliations, districts or provinces',
     'ตัวกรอง': 'Filters',
@@ -458,6 +459,8 @@ export default {
     'ประเทศไทย': 'Thailand',
   },
   contexts: [
+    // The line under a name in the search list (js/find.js#searchNote): one entry, so the singular.
+    ['.find-where', {'สถานีรถไฟฟ้า': 'Rail station', 'สังกัด': 'Affiliation', 'ประเภทสถานศึกษา': 'School type', 'บริการเรียนเสริม': 'Learning service', 'เรียนเสริม': 'Learning centre', 'จังหวัด': 'Province'}],
     // A unit after a bold number (js/panel.js valueText, nw(…)): "1 student", "12,345 students".
     ['.nowrap', {'คน': bold('student', 'students'), 'แห่ง': bold('school', 'schools')}],
     // A tile's label under its number (js/panel.js#metricTile): "77 provinces", "1 district".
