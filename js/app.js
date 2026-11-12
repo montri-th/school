@@ -81,6 +81,9 @@ import {installSchoolLabels} from './labels.js';
 import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './shell/terrain.js';
 import {createCodec, createNavigator} from './shell/url.js';
 import {pageTitle} from './shell/title.js';
+import {createIndex} from './shell/fuzzy.js';
+import {installSearch} from './shell/search.js';
+import {SEARCH_KINDS, SEARCH_HEADS, SEARCH_HINT, searchEntries, searchNote} from './find.js';
 
 const $ = id => document.getElementById(id);
 /** Filters of the school measures; the learning measure (0.2.0) has its own: search · province · service. */
@@ -257,6 +260,7 @@ function update({fit = false} = {}) {
   drawChart();
   syncList();
   saveURL();
+  state.finder?.sync();
   announce(learningOn() ? `พบสถานที่เรียนเสริม ${num(s.count)} แห่ง` : `พบ ${num(s.count)} แห่ง นักเรียน ${num(s.students)} คน`);
 }
 
@@ -265,7 +269,15 @@ function syncFilterFields() {
   const on = new Set(fieldsOf(state.metric));
   for (const k of FIELDS) { const label = $(k)?.closest('label'); if (label && k !== 'search') label.hidden = !on.has(k); }
   const words = learningOn() ? 'ค้นหาสถานที่เรียนเสริม บริการ หรือพื้นที่' : 'ค้นหาโรงเรียน สังกัด หรือพื้นที่';
-  if ($('search').placeholder !== words) { $('search').placeholder = words; $('search').previousElementSibling && ($('search').previousElementSibling.textContent = words); }
+  // The words follow the measure: on the field of the applied filter — the search list copies its placeholder to the
+  // box a reader types in (js/shell/search.js#sync) — and on the label, named by its own place in the form. (The
+  // element before the field is no longer the label: writing there emptied the list, 0.7.0 before its release.)
+  if (syncFilterFields.words !== words) {
+    syncFilterFields.words = words;
+    $('search').placeholder = words;
+    const label = document.querySelector('#filters .search-field .sr-only');
+    if (label) label.textContent = words;
+  }
 }
 
 /** Rows with full detail on the map, in the counter and in the table: the open building's or station's rows, else the focused rows. */
@@ -2035,6 +2047,56 @@ function restoreFromHistory() {
   update({fit: true});
 }
 
+/**
+ * The search box (0.7.0; owner 2026-11-12 12:05, VERBATIM: “ศึกษาแนวคิดเรื่อง Fuzzy search แล้ว implement กับ demo web
+ * ให้ได้ user benefit สูงสุดตาม user intent ในขณะนั้น และตาม product statement”). A name typed is listed with what it is
+ * and where (js/shell/search.js, names from js/find.js) and opens the level that answers the product statement's
+ * question for it: a province or a เขต/อำเภอ its students and schools, an affiliation or a school type its filter, a
+ * learning service its filter on the learning measure, a school or a learning record its profile (on its own
+ * measure), a station the schools round it. The map and the panel no longer change while the reader is
+ * still typing.
+ */
+function openFound(entry) {
+  // A filter chosen by name is shown for the whole page: the place being looked at is left and the filters that
+  // would leave it no row are lifted first (js/shell/search.js#makeWay). One the page does not offer is applied by
+  // name as the words of the text filter.
+  const offered = (field, id) => [...$(field).options].some(o => o.value === id);
+  const way = (field, id) => state.finder.makeWay(field, id);
+  const words = () => state.finder.filter(entry.name);
+  if (entry.kind === 'province') selectProvince(entry.id);
+  else if (entry.kind === 'area') selectArea(entry.id);
+  else if (entry.kind === 'station') selectStation(entry.id);
+  // An affiliation and a school type are filters of the school measures; a service is one of the learning measure.
+  else if (entry.kind === 'aff') { if (learningOn()) setMetric('students'); if (offered('aff', entry.id)) { way('aff', entry.id); filterAff(entry.id); } else words(); }
+  else if (entry.kind === 'group') { if (learningOn()) setMetric('students'); if (offered('group', entry.id)) { way('group', entry.id); filterBy('group', entry.id); } else words(); }
+  else if (entry.kind === 'service') { if (offered('service', entry.id)) { way('service', entry.id); filterService(entry.id); } else words(); }
+  // A record opens on its own measure (openRow lifts the filters that hide it); words lifted for it are drawn first.
+  else if (entry.kind === 'school' || entry.kind === 'learn') { if (state.finder.makeWayFor(() => true).length) update(); openRow(entry.id); }
+}
+function installFinder() {
+  try {
+    state.finder = installSearch({
+      input: $('search'),
+      index: createIndex({kinds: SEARCH_KINDS, heads: SEARCH_HEADS}),
+      entries: () => searchEntries({data: state.data, index: state.index, learning: state.learning}),
+      note: entry => searchNote(entry, {data: state.data, index: state.index, learning: state.learning}),
+      // What the reader is looking at comes first among equal names.
+      scope: () => ({province: $('province').value || areaById(state.selectedArea)?.province || '', area: state.selectedArea || ''}),
+      rows: text => scopeOf(state.metric, {...values(), search: text}).length,
+      unit: 'แห่ง',
+      hint: SEARCH_HINT,
+      // The sheet stood tall for the typing: once a name is chosen it goes back to its resting height, so the map
+      // shows what was chosen (an item or an area has set its own height by then).
+      pick: entry => { openFound(entry); if (sheetOpen() && $('panel').dataset.sheet === 'full') setSheet(restSheet()); },
+      // A filter or words chosen from the list: the district or station being looked at is left; the filters that may be
+      // lifted for it are these — never the province (a province without it is a reading of that province).
+      filters: {fields: ['group', 'level', 'size', 'aff', 'service'], values, count: v => scopeOf(v.service ? 'learning' : state.metric, v).length, leave: () => { state.selectedArea = ''; state.panel = overviewPanel(); }},
+      // On a phone the open sheet stands tall while a name is typed, so the list has room above the keyboard.
+      onFocus: () => { if (sheetOpen()) setSheet('full'); },
+    });
+  } catch (e) { state.finder = null; console.warn('Search list unavailable', e); }
+}
+
 function wireEvents() {
   let timer;
   for (const f of FIELDS) $(f).addEventListener(f === 'search' ? 'input' : 'change', () => {
@@ -2045,7 +2107,11 @@ function wireEvents() {
       if (f === 'province') state.selectedArea = '';
       state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea} : overviewPanel();
       update({fit: true});
-    }, f === 'search' ? 450 : 0);
+      // Words applied from the search box on a phone: the sheet goes back to its resting height and the map shows
+      // them — unless the reader is still in the box (it was emptied, which lifts the words).
+      if (f === 'search' && document.activeElement !== state.finder?.box) setSheet(restSheet());
+      // With the list, the words arrive whole (Enter or the list's last row); without it the box filters as it is typed in.
+    }, f === 'search' && !state.finder ? 450 : 0);
   });
   $('filters').addEventListener('reset', () => setTimeout(resetToOverview, 0));
   // Measure switch (radio group): click, or arrow keys between the two options.
@@ -2159,6 +2225,7 @@ async function init() {
     try { $('theme').value = localStorage.getItem(THEME_KEY) || 'auto'; } catch {}
     applyTheme();
     wireEvents();
+    installFinder();
     update();
     if (state.panel.mode !== 'overview') openMobilePanel();
     window.dispatchEvent(new CustomEvent('citymeter:ready'));
@@ -2170,6 +2237,6 @@ async function init() {
 }
 
 // Developer hook for live tuning in a browser console (not an API; may change without notice).
-window.__citymeter = {state, get map() { return state.map; }, update, fitMap, updateSpatialLayers, applyPreset: (name, opts) => state.map && applyPreset(state.map, name, opts), fitPitched: (b, opts) => state.map && fitPitched(state.map, b, opts), cameraPadding, visibleBox, focusTarget: () => focusTarget(), focusShape: () => focusShape(), frameFocus, selectSchool, openRow, selectStation, selectBuilding, buildingRows, setMetric, filterService, buildMapStyle};
+window.__citymeter = {state, get map() { return state.map; }, get finder() { return state.finder; }, update, fitMap, updateSpatialLayers, applyPreset: (name, opts) => state.map && applyPreset(state.map, name, opts), fitPitched: (b, opts) => state.map && fitPitched(state.map, b, opts), cameraPadding, visibleBox, focusTarget: () => focusTarget(), focusShape: () => focusShape(), frameFocus, selectSchool, openRow, selectStation, selectBuilding, buildingRows, setMetric, filterService, buildMapStyle};
 
 init();
