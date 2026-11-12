@@ -26,7 +26,14 @@ export const SEARCH_HEADS = Object.freeze([['โรงเรียน', 'รร.
 export const SEARCH_HINT = 'ลองชื่อโรงเรียน สังกัด สถานี เขต/อำเภอ หรือจังหวัด';
 
 /** Every entry, the few places and filters first, then the schools and the learning records. */
-export function* searchEntries({data, index, learning}) {
+/**
+ * The English an English page shows for a word of the page's own vocabulary (js/lang-en.js through `en`, which is
+ * js/shell/i18n.js#translate there and nothing on a Thai page): the list finds the entry by it and heads its row with
+ * it. The data keeps these words in Thai only.
+ */
+const englishOf = (en, th) => { const x = en ? en(th) : null; return typeof x === 'string' && x && x !== th && !/\p{Script=Thai}/u.test(x) ? x : undefined; };
+
+export function* searchEntries({data, index, learning, en = null}) {
   const byCode = new Map(provinces().map(p => [p.code, p]));
   for (const p of provinces()) yield {id: p.code, kind: 'province', name: p.th, nameEn: p.en, aka: PROVINCE_AKA[p.th], codes: [p.code, p.dopa], province: p.code};
   const places = new Map();
@@ -36,9 +43,9 @@ export function* searchEntries({data, index, learning}) {
     yield {id: a.id, kind: 'area', name: a.name, nameEn: a.nameEn, also: withoutMueang(a.name), codes: [a.id], within: [p?.th, p?.en], province: a.province, area: a.id};
   }
   for (const s of data.stations) yield {id: s.id, kind: 'station', name: s.name, nameEn: s.nameEn, station: s};
-  for (const a of data.affs) yield {id: a.id, kind: 'aff', name: a.th, aka: [a.short]};
+  for (const a of data.affs) yield {id: a.id, kind: 'aff', name: a.th, nameEn: englishOf(en, a.th), aka: [a.short]};
   for (const g of data.groups) yield {id: g.id, kind: 'group', name: g.th, nameEn: g.en, aka: [g.short]};
-  for (const s of learning?.services || []) yield {id: s.id, kind: 'service', name: s.th};
+  for (const s of learning?.services || []) yield {id: s.id, kind: 'service', name: s.th, nameEn: englishOf(en, s.th)};
   const provinceOnly = new Map();
   for (const r of data.rows) {
     let within = r.area ? places.get(r.area) : provinceOnly.get(r.province);
